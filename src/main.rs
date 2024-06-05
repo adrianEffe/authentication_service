@@ -1,4 +1,4 @@
-use axum::{routing::get, Router};
+use axum::{response::IntoResponse, routing::get, Router};
 
 #[tokio::main]
 async fn main() {
@@ -7,6 +7,6 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn healthcheck() -> String {
-    "Hello World".to_string()
+async fn healthcheck() -> impl IntoResponse {
+    "Hello World"
 }
