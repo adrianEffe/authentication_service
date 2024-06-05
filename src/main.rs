@@ -1,4 +1,4 @@
-use axum::{response::IntoResponse, routing::get, Router};
+use axum::{response::IntoResponse, routing::get, Json, Router};
 
 #[tokio::main]
 async fn main() {
@@ -8,5 +8,9 @@ async fn main() {
 }
 
 async fn healthcheck() -> impl IntoResponse {
-    "Hello World"
+    let json_response = serde_json::json!({
+        "status": "success",
+        "message": "Hello World"
+    });
+    Json(json_response)
 }
