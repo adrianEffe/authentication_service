@@ -4,10 +4,10 @@ pub enum Status {
 }
 
 impl Status {
-    fn raw_value(&self) -> String {
+    fn raw_value(&self) -> &str {
         match &self {
-            Status::Success => String::from("success"),
-            Status::Failure => String::from("failure"),
+            Status::Success => "success",
+            Status::Failure => "failure",
         }
     }
 }
