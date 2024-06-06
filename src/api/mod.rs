@@ -1,2 +1,2 @@
 pub mod healthcheck;
-mod utils;
+pub mod utils;

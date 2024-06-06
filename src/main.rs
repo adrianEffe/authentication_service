@@ -1,6 +1,7 @@
 mod api;
 use api::healthcheck::healthcheck;
 use axum::{routing::get, Router};
+use serde::Deserialize;
 use tokio::net::TcpListener;
 
 #[tokio::main]
@@ -25,8 +26,13 @@ async fn test_healthcheck() {
     let url = format!("http://{}/api/healthcheck", address);
 
     let body = reqwest::get(url).await.unwrap().text().await.unwrap();
+    let deserialised: StatusResponse = serde_json::from_str(&body).unwrap();
 
-    assert_eq!(body, "ioafudsio");
+    assert_eq!(deserialised.status, api::utils::status::Status::Success);
+}
 
-    println!("body = {body:?}");
+#[cfg(test)]
+#[derive(Deserialize)]
+struct StatusResponse {
+    status: api::utils::status::Status,
 }
