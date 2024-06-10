@@ -1,3 +1,6 @@
+use serde::Deserialize;
+
+#[derive(Deserialize, PartialEq, Debug)]
 pub enum Status {
     Success,
     Failure,
@@ -6,8 +9,8 @@ pub enum Status {
 impl Status {
     fn raw_value(&self) -> &str {
         match &self {
-            Status::Success => "success",
-            Status::Failure => "failure",
+            Status::Success => "Success",
+            Status::Failure => "Failure",
         }
     }
 }
