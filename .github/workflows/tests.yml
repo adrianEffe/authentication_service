@@ -8,6 +8,7 @@ env:
   CARGO_TERM_COLOR: always
   SQLX_VERSION: 0.7.4
   SQLX_FEATURES: "rustls,postgres"
+  POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
 
 
 jobs:
@@ -18,16 +19,11 @@ jobs:
       postgres:
         image: postgres:latest
         env:
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
         ports:
           - 6500:5432
-        options: >-
-          --health-cmd="pg_isready -U ${{ secrets.POSTGRES_USER }} -d ${{ secrets.POSTGRES_DB }}"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
 
     steps:
       - name: Checkout code
