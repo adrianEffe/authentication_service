@@ -8,28 +8,21 @@ use crate::{api::healthcheck::healthcheck, helper::config::Config};
 use axum::{routing::get, Router};
 
 use std::sync::Arc;
+use tokio::net::TcpListener;
 use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-pub async fn app(config: Config) -> Router {
-    let pool = match PgPoolOptions::new()
-        .max_connections(10)
-        .connect(&config.database_url)
-        .await
-    {
-        Ok(pool) => {
-            println!("Enstablished db connection");
-            pool
-        }
-        Err(err) => {
-            println!("Failed to connecto to db with error: {:?}", err);
-            std::process::exit(1)
-        }
-    };
+pub async fn run(listener: TcpListener, config: Config) {
+    let pool = connect_to_database(&config).await;
 
     let app_state = Arc::new(AppState { db: pool });
 
+    let app = app(app_state);
+    axum::serve(listener, app).await.unwrap();
+}
+
+fn app(app_state: Arc<AppState>) -> Router {
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -44,4 +37,21 @@ pub async fn app(config: Config) -> Router {
             ),
         )
         .with_state(app_state)
+}
+
+async fn connect_to_database(config: &Config) -> Pool<Postgres> {
+    match PgPoolOptions::new()
+        .max_connections(10)
+        .connect(&config.database_url)
+        .await
+    {
+        Ok(pool) => {
+            println!("Enstablished db connection");
+            pool
+        }
+        Err(err) => {
+            println!("Failed to connecto to db with error: {:?}", err);
+            std::process::exit(1)
+        }
+    }
 }
