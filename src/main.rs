@@ -1,4 +1,4 @@
-use authentication_service::{app::run, helper::config::Config};
+use authentication_service::{application::run, helper::config::Config};
 use dotenv::dotenv;
 use tokio::net::TcpListener;
 

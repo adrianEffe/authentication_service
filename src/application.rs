@@ -1,7 +1,7 @@
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
 pub struct AppState {
-    db: Pool<Postgres>,
+    pub db: Pool<Postgres>,
 }
 
 use crate::{api::healthcheck::healthcheck, helper::config::Config};
@@ -22,7 +22,7 @@ pub async fn run(listener: TcpListener, config: Config) {
     axum::serve(listener, app).await.unwrap();
 }
 
-fn app(app_state: Arc<AppState>) -> Router {
+pub fn app(app_state: Arc<AppState>) -> Router {
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -39,7 +39,7 @@ fn app(app_state: Arc<AppState>) -> Router {
         .with_state(app_state)
 }
 
-async fn connect_to_database(config: &Config) -> Pool<Postgres> {
+pub async fn connect_to_database(config: &Config) -> Pool<Postgres> {
     match PgPoolOptions::new()
         .max_connections(10)
         .connect(&config.database_url)
