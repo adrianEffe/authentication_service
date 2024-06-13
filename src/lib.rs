@@ -1,4 +1,5 @@
 pub mod api;
+pub mod helper;
 
 use api::healthcheck::healthcheck;
 use axum::{routing::get, Router};
