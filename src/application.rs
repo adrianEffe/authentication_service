@@ -4,7 +4,10 @@ pub struct AppState {
     pub db: Pool<Postgres>,
 }
 
-use crate::{api::healthcheck::healthcheck, helper::config::Config};
+use crate::{
+    api::{healthcheck::healthcheck, register::register_handler},
+    helper::config::Config,
+};
 use axum::{routing::get, Router};
 
 use std::sync::Arc;
@@ -28,13 +31,12 @@ pub fn app(app_state: Arc<AppState>) -> Router {
         .init();
 
     Router::new()
-        .route(
-            "/api/healthcheck",
-            get(healthcheck).layer(
-                TraceLayer::new_for_http()
-                    .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
-                    .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
-            ),
+        .route("/api/healthcheck", get(healthcheck))
+        .route("/api/register", get(register_handler))
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
+                .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
         )
         .with_state(app_state)
 }
