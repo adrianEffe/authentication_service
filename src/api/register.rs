@@ -12,7 +12,7 @@ pub async fn register_handler(
     let user = sqlx::query_as!(
         User,
         "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *",
-        "adrian@email.com".to_string().to_ascii_uppercase(),
+        "adrian@email.com".to_string().to_ascii_lowercase(),
         "12345678".to_string()
     )
     .fetch_one(&data.db)
