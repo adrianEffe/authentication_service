@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, PartialEq, Debug)]
 pub enum Status {
@@ -19,5 +19,17 @@ pub fn response_message(status: &Status, message: &str) -> serde_json::Value {
     serde_json::json!({
         "status": status.raw_value(),
         "message": message,
+    })
+}
+
+pub fn response_data<T>(status: &Status, field: &str, data: T) -> serde_json::Value
+where
+    T: Serialize,
+{
+    serde_json::json!({
+        "status": status.raw_value(),
+        "data": serde_json::json!({
+        field: data
+        }),
     })
 }
