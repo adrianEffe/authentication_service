@@ -1,9 +1,14 @@
 use authentication_service::{application::run, helper::config::Config};
 use dotenv::dotenv;
 use tokio::net::TcpListener;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer())
+        .init();
+
     dotenv().ok();
 
     let config = Config::init();
