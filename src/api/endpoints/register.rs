@@ -1,11 +1,10 @@
-use crate::api::schemas::register_user::RegisterUserSchema;
-use crate::api::utils::status::{response_data, response_message, Status};
+use crate::api::{
+    schemas::register_user::RegisterUserSchema,
+    utils::status::{response_data, response_message, Status},
+};
 use crate::application::AppState;
 use crate::model::user::User;
-use axum::extract::State;
-use axum::http::StatusCode;
-use axum::response::IntoResponse;
-use axum::Json;
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use std::sync::Arc;
 
 pub async fn register_handler(
