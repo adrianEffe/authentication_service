@@ -1,12 +1,42 @@
 use authentication_service::{
     api::utils::status::Status,
-    application::{app, connect_to_database, AppState},
+    application::{connect_to_database, run},
     helper::config::Config,
+    model::user::User,
 };
 use dotenv::dotenv;
 use serde::Deserialize;
-use std::sync::Arc;
 use tokio::net::TcpListener;
+
+#[tokio::test]
+async fn test_register() {
+    let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+
+    dotenv().ok();
+    let config = Config::init();
+
+    let db_config = config.clone();
+    let db = connect_to_database(&db_config).await;
+
+    tokio::spawn(async move {
+        run(listener, config).await;
+    });
+
+    let url = format!("http://{}/api/register", address);
+
+    let response: GenericResponse<UserData> =
+        reqwest::get(url).await.unwrap().json().await.unwrap();
+
+    assert_eq!(response.data.unwrap().user.email, "adrian@email.com");
+
+    let _ = sqlx::query!(
+        "DELETE FROM users WHERE email = $1",
+        "adrian@email.com".to_string()
+    )
+    .fetch_one(&db)
+    .await;
+}
 
 #[tokio::test]
 async fn test_healthcheck() {
@@ -15,24 +45,28 @@ async fn test_healthcheck() {
 
     dotenv().ok();
     let config = Config::init();
-    let pool = connect_to_database(&config).await;
 
-    let app_state = Arc::new(AppState { db: pool });
-    let app = app(app_state);
     tokio::spawn(async move {
-        axum::serve(listener, app).await.unwrap();
+        run(listener, config).await;
     });
 
     let url = format!("http://{}/api/healthcheck", address);
 
-    let body = reqwest::get(url).await.unwrap().text().await.unwrap();
-    let deserialised: StatusResponse = serde_json::from_str(&body).unwrap();
+    let response: GenericResponse<UserData> =
+        reqwest::get(url).await.unwrap().json().await.unwrap();
 
-    assert_eq!(deserialised.status, Status::Success);
+    assert_eq!(response.status, Status::Success);
 }
 
 #[cfg(test)]
-#[derive(Deserialize)]
-struct StatusResponse {
+#[derive(Debug, Deserialize)]
+struct GenericResponse<T> {
     status: Status,
+    data: Option<T>,
+}
+
+#[cfg(test)]
+#[derive(Debug, Deserialize)]
+struct UserData {
+    user: User,
 }
