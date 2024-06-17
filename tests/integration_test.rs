@@ -6,21 +6,13 @@ use authentication_service::{
 };
 use dotenv::dotenv;
 use serde::Deserialize;
+use sqlx::{Executor, Pool, Postgres};
+use std::net::SocketAddr;
 use tokio::net::TcpListener;
 
 #[tokio::test]
 async fn test_register() {
-    let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
-    let address = listener.local_addr().unwrap();
-
-    dotenv().ok();
-    let config = Config::init();
-
-    let db = connect_to_database(&config.clone()).await;
-
-    tokio::spawn(async move {
-        run(listener, config).await;
-    });
+    let address = spawn_server().await;
 
     let url = format!("http://{}/api/register", address);
 
@@ -29,25 +21,20 @@ async fn test_register() {
 
     assert_eq!(response.data.unwrap().user.email, "adrian@email.com");
 
-    let _ = sqlx::query!(
-        "DELETE FROM users WHERE email = $1",
-        "adrian@email.com".to_string()
-    )
-    .fetch_one(&db)
+    clean_up_db(|db| async move {
+        db.execute(sqlx::query!(
+            "DELETE FROM users WHERE email = $1",
+            "adrian@email.com".to_string()
+        ))
+        .await
+        .unwrap();
+    })
     .await;
 }
 
 #[tokio::test]
 async fn test_healthcheck() {
-    let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
-    let address = listener.local_addr().unwrap();
-
-    dotenv().ok();
-    let config = Config::init();
-
-    tokio::spawn(async move {
-        run(listener, config).await;
-    });
+    let address = spawn_server().await;
 
     let url = format!("http://{}/api/healthcheck", address);
 
@@ -55,6 +42,31 @@ async fn test_healthcheck() {
         reqwest::get(url).await.unwrap().json().await.unwrap();
 
     assert_eq!(response.status, Status::Success);
+}
+
+#[cfg(test)]
+async fn spawn_server() -> SocketAddr {
+    let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    dotenv().ok();
+    let config = Config::init();
+
+    tokio::spawn(async move {
+        run(listener, config).await;
+    });
+
+    address
+}
+
+#[cfg(test)]
+async fn clean_up_db<F, Fut>(query: F)
+where
+    F: Fn(Pool<Postgres>) -> Fut,
+    Fut: std::future::Future<Output = ()>,
+{
+    let config = Config::init();
+    let db = connect_to_database(&config).await;
+    query(db).await;
 }
 
 #[cfg(test)]
