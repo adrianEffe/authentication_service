@@ -1,3 +1,2 @@
-pub mod healthcheck;
-pub mod register;
+pub mod endpoints;
 pub mod utils;

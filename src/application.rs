@@ -5,7 +5,7 @@ pub struct AppState {
 }
 
 use crate::{
-    api::{healthcheck::healthcheck, register::register_handler},
+    api::endpoints::{healthcheck::healthcheck, register::register_handler},
     helper::config::Config,
 };
 use axum::{routing::get, Router};
