@@ -19,13 +19,13 @@ pub async fn register_handler(
     .await
     .map_err(|e| {
         let error_response = serde_json::json!({
-            "status": "fail",
+            "status": "Failure",
             "message": format!("Database error: {}", e),
         });
         (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
     })?;
 
-    let user_response = serde_json::json!({"status": "success","data": serde_json::json!({
+    let user_response = serde_json::json!({"status": "Success","data": serde_json::json!({
         "user": user
     })});
 
