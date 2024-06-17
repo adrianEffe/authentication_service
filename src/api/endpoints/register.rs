@@ -1,3 +1,4 @@
+use crate::api::schemas::register_user::RegisterUserSchema;
 use crate::application::AppState;
 use crate::model::user::User;
 use axum::extract::State;
@@ -8,12 +9,13 @@ use std::sync::Arc;
 
 pub async fn register_handler(
     State(data): State<Arc<AppState>>,
+    Json(body): Json<RegisterUserSchema>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let user = sqlx::query_as!(
         User,
         "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *",
-        "adrian@email.com".to_string().to_ascii_lowercase(),
-        "12345678".to_string()
+        body.email.to_string().to_ascii_lowercase(),
+        body.password.to_string()
     )
     .fetch_one(&data.db)
     .await

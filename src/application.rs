@@ -1,3 +1,4 @@
+use axum::routing::post;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
 pub struct AppState {
@@ -27,7 +28,7 @@ pub async fn run(listener: TcpListener, config: Config) {
 fn app(app_state: Arc<AppState>) -> Router {
     Router::new()
         .route("/api/healthcheck", get(healthcheck))
-        .route("/api/register", get(register_handler))
+        .route("/api/register", post(register_handler))
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
