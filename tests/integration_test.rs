@@ -16,8 +16,7 @@ async fn test_register() {
     dotenv().ok();
     let config = Config::init();
 
-    let db_config = config.clone();
-    let db = connect_to_database(&db_config).await;
+    let db = connect_to_database(&config.clone()).await;
 
     tokio::spawn(async move {
         run(listener, config).await;
