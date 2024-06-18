@@ -1,13 +1,12 @@
 use crate::api::{
     schemas::register_user::RegisterUserSchema,
+    utils::password_hasher,
     utils::status::{response_data, response_message, Status},
 };
 use crate::application::AppState;
 use crate::model::user::User;
 use anyhow::Result;
-use argon2::{password_hash::SaltString, Argon2, PasswordHasher};
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
-use rand_core::OsRng;
 use sqlx::{Pool, Postgres};
 use std::sync::Arc;
 
@@ -28,9 +27,7 @@ pub async fn register_handler(
         }
     }
 
-    let salt = SaltString::generate(&mut OsRng);
-    let hashed_password = Argon2::default()
-        .hash_password(body.password.as_bytes(), &salt)
+    let hashed_password = password_hasher::hash_password(&body.password)
         .map_err(|e| {
             let message = format!("Error hashing password: {}", e);
             let error_response = response_message(&Status::Failure, &message);
@@ -57,7 +54,7 @@ pub async fn register_handler(
     Ok(Json(user_response))
 }
 
-async fn user_exists(db: &Pool<Postgres>, email: &String) -> Result<Option<bool>> {
+async fn user_exists(db: &Pool<Postgres>, email: &str) -> Result<Option<bool>> {
     let exists: Option<bool> =
         sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)")
             .bind(email.to_owned().to_ascii_lowercase())
