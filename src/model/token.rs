@@ -1,5 +1,4 @@
-use std::error::Error;
-
+use anyhow::Result;
 use base64::{engine::general_purpose, Engine};
 use serde::{Deserialize, Serialize};
 
@@ -20,37 +19,41 @@ pub struct TokenDetails {
     pub expires_in: Option<i64>,
 }
 
-pub fn generate_jwt(
-    user_id: uuid::Uuid,
-    ttl: i64,
-    private_key: String,
-) -> Result<TokenDetails, jsonwebtoken::errors::Error> {
-    let bytes_private_key = general_purpose::STANDARD.decode(private_key).unwrap();
-    let decoded_private_key = String::from_utf8(bytes_private_key).unwrap();
+pub fn generate_jwt(user_id: uuid::Uuid, ttl: i64, private_key: String) -> Result<TokenDetails> {
+    let bytes_private_key = general_purpose::STANDARD.decode(private_key)?;
+    let decoded_private_key = String::from_utf8(bytes_private_key)?;
 
     let now = chrono::Utc::now();
+    let exp = (now + chrono::Duration::minutes(ttl)).timestamp();
+
     let mut token_details = TokenDetails {
         user_id,
         token_uuid: uuid::Uuid::new_v4(),
-        expires_in: Some((now + chrono::Duration::minutes(ttl)).timestamp()),
+        expires_in: Some(exp),
         token: None,
     };
 
     let claims = TokenClaims {
         sub: token_details.user_id.to_string(),
         token_uuid: token_details.token_uuid.to_string(),
-        exp: token_details.expires_in.unwrap(),
+        exp,
         iat: now.timestamp(),
         nbf: now.timestamp(),
     };
 
+    let token = encode_jwt(&claims, decoded_private_key)?;
+    token_details.token = Some(token);
+
+    Ok(token_details)
+}
+
+fn encode_jwt(claims: &TokenClaims, private_key: String) -> Result<String> {
     let header = jsonwebtoken::Header::new(jsonwebtoken::Algorithm::RS256);
     let token = jsonwebtoken::encode(
         &header,
         &claims,
-        &jsonwebtoken::EncodingKey::from_rsa_pem(decoded_private_key.as_bytes())?,
+        &jsonwebtoken::EncodingKey::from_rsa_pem(private_key.as_bytes())?,
     )?;
-    token_details.token = Some(token);
 
-    Ok(token_details)
+    Ok(token)
 }
