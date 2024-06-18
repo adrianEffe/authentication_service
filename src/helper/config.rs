@@ -16,7 +16,7 @@ impl Config {
         let database_url = get_env("DATABASE_URL");
         let access_token_private_key = get_env("ACCESS_TOKEN_PRIVATE_KEY");
         let access_token_public_key = get_env("ACCESS_TOKEN_PUBLIC_KEY");
-        let access_token_expires_in = get_env("ACCESS_TOKEN_EXPIRED_IN");
+        let access_token_expires_in = get_env("ACCESS_TOKEN_EXPIRES_IN");
         let access_token_max_age = get_env("ACCESS_TOKEN_MAXAGE");
 
         Config {
