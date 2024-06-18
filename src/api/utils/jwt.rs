@@ -63,3 +63,48 @@ fn encode_jwt(claims: &TokenClaims, private_key: String) -> Result<String> {
 
     Ok(token)
 }
+
+#[cfg(test)]
+mod tests {
+    use dotenv::dotenv;
+
+    use crate::helper::config::Config;
+
+    use super::*;
+
+    #[test]
+    fn test_encoding_jwt() {
+        dotenv().ok();
+        let config = Config::init();
+        let user_id = uuid::Uuid::new_v4();
+
+        let token_details = generate_jwt(
+            user_id,
+            config.access_token_max_age,
+            config.access_token_private_key,
+        );
+
+        assert_eq!(token_details.unwrap().user_id, user_id);
+    }
+
+    #[test]
+    fn test_decoding_jwt() {
+        dotenv().ok();
+        let config = Config::init();
+        let user_id = uuid::Uuid::new_v4();
+
+        let token_details = generate_jwt(
+            user_id,
+            config.access_token_max_age,
+            config.access_token_private_key,
+        )
+        .unwrap();
+
+        let verified_details = verify_jwt(
+            config.access_token_public_key,
+            &token_details.token.unwrap(),
+        );
+
+        assert_eq!(verified_details.unwrap().user_id, user_id);
+    }
+}

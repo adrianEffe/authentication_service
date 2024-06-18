@@ -1,20 +1,17 @@
-use axum::routing::post;
-use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
-
-pub struct AppState {
-    pub db: Pool<Postgres>,
-}
-
 use crate::{
     api::endpoints::{healthcheck::healthcheck, register::register_handler},
     helper::config::Config,
 };
-use axum::{routing::get, Router};
-
+use axum::{routing::get, routing::post, Router};
+use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
+
+pub struct AppState {
+    pub db: Pool<Postgres>,
+}
 
 pub async fn run(listener: TcpListener, config: Config) {
     let pool = connect_to_database(&config).await;
