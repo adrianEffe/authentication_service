@@ -66,11 +66,9 @@ fn encode_jwt(claims: &TokenClaims, private_key: String) -> Result<String> {
 
 #[cfg(test)]
 mod tests {
-    use dotenv::dotenv;
-
-    use crate::helper::config::Config;
-
     use super::*;
+    use crate::helper::config::Config;
+    use dotenv::dotenv;
 
     #[test]
     fn test_encoding_jwt() {
