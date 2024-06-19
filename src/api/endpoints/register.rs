@@ -49,6 +49,7 @@ pub async fn register_handler(
         (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
     })?;
 
+    // TODO: return a lean version of user w/o password
     let user_response = response_data(&Status::Success, "user", user);
 
     Ok(Json(user_response))
