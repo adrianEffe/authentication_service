@@ -17,7 +17,7 @@ async fn test_register_success() {
     let url = format!("http://{}/api/register", address);
     let client = reqwest::Client::new();
 
-    let email = "email@test.com";
+    let email = "register_success@test.com";
     let body = serde_json::json!({
         "email": email,
         "password": "12345678"
@@ -28,10 +28,10 @@ async fn test_register_success() {
         .json(&body)
         .send()
         .await
-        .unwrap()
+        .expect("failed at send")
         .json()
         .await
-        .unwrap();
+        .expect("failed at json");
 
     clean_up_db(|db| async move {
         db.execute(sqlx::query!("DELETE FROM users WHERE email = $1", email))
@@ -50,7 +50,7 @@ async fn test_register_existing_user_failure() {
     let url = format!("http://{}/api/register", address);
     let client = reqwest::Client::new();
 
-    let email = "email@test.com";
+    let email = "existing_failure@test.com";
     let body = serde_json::json!({
         "email": email,
         "password": "12345678"
