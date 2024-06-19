@@ -6,10 +6,9 @@ use rand_core::OsRng;
 
 pub fn hash_password(password: &str) -> Result<String, Error> {
     let salt = SaltString::generate(&mut OsRng);
-    let hashed_password = Argon2::default()
+    Argon2::default()
         .hash_password(password.as_bytes(), &salt)
-        .map(|hash| hash.to_string());
-    hashed_password
+        .map(|hash| hash.to_string())
 }
 
 pub fn is_valid(password: &str, hashed_password: &str) -> bool {
