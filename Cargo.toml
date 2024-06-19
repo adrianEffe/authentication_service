@@ -3,6 +3,9 @@ name = "authentication_service"
 version = "0.1.0"
 edition = "2021"
 
+[dev-dependencies]
+reqwest = { version = "0.12.4", features = ["json"] }
+
 [dependencies]
 anyhow = "1.0.86"
 argon2 = "0.5.3"
@@ -13,7 +16,6 @@ chrono = { version = "0.4.38", features = ["serde"] }
 dotenv = "0.15.0"
 jsonwebtoken = "9.3.0"
 rand_core = { version = "0.6.4", features = ["std"] }
-reqwest = { version = "0.12.4", features = ["json"] }
 serde = { version = "1.0.203", features = ["derive"] }
 serde_json = "1.0.117"
 sqlx = { version = "0.7.4", features = ["runtime-async-std-native-tls", "postgres", "chrono", "uuid"] }
