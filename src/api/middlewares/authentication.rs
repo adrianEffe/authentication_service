@@ -1,26 +1,23 @@
 use crate::{
-    api::utils::status::{response_message, Status},
+    api::utils::{
+        jwt::verify_jwt,
+        status::{response_message, Status},
+    },
     application::AppState,
+    model::auth_middleware::AuthMiddleware,
     model::user::User,
 };
 use axum::{
     body::Body,
     extract::State,
-    http::{header, HeaderMap, Request},
+    http::{header, Request},
     middleware::Next,
     response::IntoResponse,
     Json,
 };
 use axum_extra::extract::CookieJar;
 use reqwest::StatusCode;
-use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AuthMiddleware {
-    pub user: User,
-    pub access_token_uuid: uuid::Uuid,
-}
 
 pub async fn auth(
     cookie_jar: CookieJar,
@@ -36,11 +33,9 @@ pub async fn auth(
                 .get(header::AUTHORIZATION)
                 .and_then(|auth_header| auth_header.to_str().ok())
                 .and_then(|auth_value| {
-                    if auth_value.starts_with("Bearer ") {
-                        Some(auth_value[7..].to_owned())
-                    } else {
-                        None
-                    }
+                    auth_value
+                        .strip_prefix("Bearer ")
+                        .map(|token| token.to_owned())
                 })
         });
 
@@ -48,5 +43,40 @@ pub async fn auth(
         let error_response = response_message(&Status::Failure, "You are not logged in");
         (StatusCode::UNAUTHORIZED, Json(error_response))
     })?;
+
+    let access_token_details = match verify_jwt(&data.env.access_token_public_key, &access_token) {
+        Ok(token_details) => token_details,
+        Err(e) => {
+            let error_response = response_message(&Status::Failure, &e.to_string());
+            return Err((StatusCode::UNAUTHORIZED, Json(error_response)));
+        }
+    };
+
+    // TODO: Could have a redis instance to check for revoked tokens
+    let user = sqlx::query_as!(
+        User,
+        "SELECT * FROM users WHERE id = $1",
+        access_token_details.user_id
+    )
+    .fetch_optional(&data.db)
+    .await
+    .map_err(|e| {
+        let message = format!("Error fetching from database: {}", e);
+        let error_response = response_message(&Status::Failure, &message);
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+    })?;
+
+    let user = user.ok_or_else(|| {
+        let error_response = response_message(
+            &Status::Failure,
+            "The user belonging to this token no longer exists",
+        );
+        (StatusCode::UNAUTHORIZED, Json(error_response))
+    })?;
+
+    req.extensions_mut().insert(AuthMiddleware {
+        user,
+        access_token_uuid: access_token_details.token_uuid,
+    });
     Ok(next.run(req).await)
 }

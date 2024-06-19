@@ -2,7 +2,7 @@ use crate::model::token::{TokenClaims, TokenDetails};
 use anyhow::Result;
 use base64::{engine::general_purpose, Engine};
 
-pub fn verify_jwt(public_key: String, token: &str) -> Result<TokenDetails> {
+pub fn verify_jwt(public_key: &str, token: &str) -> Result<TokenDetails> {
     let bytes_public_key = general_purpose::STANDARD.decode(public_key)?;
     let decoded_public_key = String::from_utf8(bytes_public_key)?;
 
@@ -25,7 +25,7 @@ pub fn verify_jwt(public_key: String, token: &str) -> Result<TokenDetails> {
     })
 }
 
-pub fn generate_jwt(user_id: uuid::Uuid, ttl: i64, private_key: String) -> Result<TokenDetails> {
+pub fn generate_jwt(user_id: uuid::Uuid, ttl: i64, private_key: &str) -> Result<TokenDetails> {
     let bytes_private_key = general_purpose::STANDARD.decode(private_key)?;
     let decoded_private_key = String::from_utf8(bytes_private_key)?;
 
@@ -47,13 +47,13 @@ pub fn generate_jwt(user_id: uuid::Uuid, ttl: i64, private_key: String) -> Resul
         nbf: now.timestamp(),
     };
 
-    let token = encode_jwt(&claims, decoded_private_key)?;
+    let token = encode_jwt(&claims, &decoded_private_key)?;
     token_details.token = Some(token);
 
     Ok(token_details)
 }
 
-fn encode_jwt(claims: &TokenClaims, private_key: String) -> Result<String> {
+fn encode_jwt(claims: &TokenClaims, private_key: &str) -> Result<String> {
     let header = jsonwebtoken::Header::new(jsonwebtoken::Algorithm::RS256);
     let token = jsonwebtoken::encode(
         &header,
@@ -79,7 +79,7 @@ mod tests {
         let token_details = generate_jwt(
             user_id,
             config.access_token_max_age,
-            config.access_token_private_key,
+            &config.access_token_private_key,
         );
 
         assert_eq!(token_details.unwrap().user_id, user_id);
@@ -94,12 +94,12 @@ mod tests {
         let token_details = generate_jwt(
             user_id,
             config.access_token_max_age,
-            config.access_token_private_key,
+            &config.access_token_private_key,
         )
         .unwrap();
 
         let verified_details = verify_jwt(
-            config.access_token_public_key,
+            &config.access_token_public_key,
             &token_details.token.unwrap(),
         );
 
