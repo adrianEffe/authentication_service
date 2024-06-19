@@ -11,12 +11,16 @@ use tracing::Level;
 
 pub struct AppState {
     pub db: Pool<Postgres>,
+    pub env: Config,
 }
 
 pub async fn run(listener: TcpListener, config: Config) {
     let pool = connect_to_database(&config).await;
 
-    let app_state = Arc::new(AppState { db: pool });
+    let app_state = Arc::new(AppState {
+        db: pool,
+        env: config,
+    });
 
     let app = app(app_state);
     axum::serve(listener, app).await.unwrap();
