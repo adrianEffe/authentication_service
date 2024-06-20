@@ -5,6 +5,7 @@ use authentication_service::{
     model::user::User,
 };
 use dotenv::dotenv;
+use reqwest::header::AUTHORIZATION;
 use serde::Deserialize;
 use sqlx::{Executor, Pool, Postgres};
 use std::net::SocketAddr;
@@ -130,6 +131,77 @@ async fn test_login_failure() {
     let response: GenericResponse<AccessTokenData> = client
         .post(&login_url)
         .json(&body)
+        .send()
+        .await
+        .expect("failed at send")
+        .json()
+        .await
+        .expect("failed at json");
+
+    assert_eq!(response.status, Status::Failure);
+}
+
+#[tokio::test]
+async fn test_get_me_success() {
+    let address = spawn_server().await;
+
+    let register_url = format!("http://{}/api/register", address);
+    let login_url = format!("http://{}/api/login", address);
+    let get_me_url = format!("http://{}/api/users/me", address);
+    let client = reqwest::Client::new();
+
+    let email = "get_me_success@test.com";
+    let body = serde_json::json!({
+        "email": email,
+        "password": "12345678"
+    });
+
+    let _ = client.post(&register_url).json(&body).send().await;
+
+    let response: GenericResponse<AccessTokenData> = client
+        .post(&login_url)
+        .json(&body)
+        .send()
+        .await
+        .expect("failed at send")
+        .json()
+        .await
+        .expect("failed at json");
+
+    let token = response.data.unwrap().access_token;
+
+    let response: GenericResponse<UserData> = client
+        .get(&get_me_url)
+        .header(AUTHORIZATION, format!("Bearer {}", token))
+        .send()
+        .await
+        .expect("failed at send")
+        .json()
+        .await
+        .expect("failed at json");
+
+    clean_up_db(|db| async move {
+        db.execute(sqlx::query!("DELETE FROM users WHERE email = $1", email))
+            .await
+            .unwrap();
+    })
+    .await;
+
+    assert_eq!(response.data.unwrap().user.email, email);
+}
+
+#[tokio::test]
+async fn test_get_me_failure() {
+    let address = spawn_server().await;
+
+    let get_me_url = format!("http://{}/api/users/me", address);
+    let client = reqwest::Client::new();
+
+    let token = "Bearer definetely invalid";
+
+    let response: GenericResponse<UserData> = client
+        .get(&get_me_url)
+        .header(AUTHORIZATION, format!("Bearer {}", token))
         .send()
         .await
         .expect("failed at send")
