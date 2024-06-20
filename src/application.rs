@@ -1,5 +1,5 @@
 use crate::{
-    api::endpoints::{healthcheck::healthcheck, register::register_handler},
+    api::endpoints::{healthcheck::healthcheck, login::login_handler, register::register_handler},
     helper::config::Config,
 };
 use axum::{routing::get, routing::post, Router};
@@ -30,6 +30,7 @@ fn app(app_state: Arc<AppState>) -> Router {
     Router::new()
         .route("/api/healthcheck", get(healthcheck))
         .route("/api/register", post(register_handler))
+        .route("/api/login", post(login_handler))
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
