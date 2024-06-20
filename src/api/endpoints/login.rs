@@ -17,30 +17,14 @@ use axum::{
     Json,
 };
 use axum_extra::extract::cookie::{Cookie, SameSite};
+use sqlx::{Pool, Postgres};
 use std::sync::Arc;
 
 pub async fn login_handler(
     State(data): State<Arc<AppState>>,
     Json(body): Json<LoginUserSchema>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    // TODO: extract fetch user function
-    let user = sqlx::query_as!(
-        User,
-        "SELECT * FROM users WHERE email = $1",
-        body.email.to_ascii_lowercase()
-    )
-    .fetch_optional(&data.db)
-    .await
-    .map_err(|e| {
-        let message = format!("Database error: {}", e);
-        let error_message = response_message(&Status::Failure, &message);
-        (StatusCode::INTERNAL_SERVER_ERROR, Json(error_message))
-    })?
-    .ok_or_else(|| {
-        let error_message = response_message(&Status::Failure, "Invalid email or password");
-        (StatusCode::BAD_REQUEST, Json(error_message))
-    })?;
-
+    let user = fetch_user(&data.db, &body.email).await?;
     // TODO: extract validate password
     let is_valid = is_valid(&body.password, &user.password);
     if !is_valid {
@@ -98,4 +82,26 @@ pub async fn login_handler(
 
     response.headers_mut().extend(headers);
     Ok(response)
+}
+
+async fn fetch_user(
+    db: &Pool<Postgres>,
+    email: &str,
+) -> Result<User, (StatusCode, Json<serde_json::Value>)> {
+    sqlx::query_as!(
+        User,
+        "SELECT * FROM users WHERE email = $1",
+        email.to_ascii_lowercase()
+    )
+    .fetch_optional(db)
+    .await
+    .map_err(|e| {
+        let message = format!("Database error: {}", e);
+        let error_message = response_message(&Status::Failure, &message);
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(error_message))
+    })?
+    .ok_or_else(|| {
+        let error_message = response_message(&Status::Failure, "Invalid email or password");
+        (StatusCode::BAD_REQUEST, Json(error_message))
+    })
 }
