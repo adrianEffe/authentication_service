@@ -1,10 +1,15 @@
-use crate::api::{
-    schemas::register_user::RegisterUserSchema,
-    utils::password_hasher,
-    utils::status::{response_data, response_message, Status},
-};
 use crate::application::AppState;
-use crate::model::user::User;
+use crate::model::user::{FilteredUser, User};
+use crate::{
+    api::{
+        schemas::register_user::RegisterUserSchema,
+        utils::{
+            password_hasher,
+            status::{response_data, response_message, Status},
+        },
+    },
+    model::user::UserResponse,
+};
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use sqlx::{Pool, Postgres};
 use std::sync::Arc;
@@ -24,8 +29,12 @@ pub async fn register_handler(
     let user =
         insert_user_in_db(&data.db, &body.email.to_ascii_lowercase(), &hashed_password).await?;
 
-    // TODO: return a lean version of user w/o password
-    let user_response = response_data(&Status::Success, "user", user);
+    let user_response = response_data(
+        &Status::Success,
+        UserResponse {
+            user: FilteredUser::from(user),
+        },
+    );
 
     Ok(Json(user_response))
 }
