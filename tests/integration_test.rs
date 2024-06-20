@@ -56,15 +56,7 @@ async fn test_register_existing_user_failure() {
         "password": "12345678"
     });
 
-    let _: GenericResponse<UserData> = client
-        .post(&url)
-        .json(&body)
-        .send()
-        .await
-        .unwrap()
-        .json()
-        .await
-        .unwrap();
+    let _ = client.post(&url).json(&body).send().await;
 
     let response: GenericResponse<UserData> = client
         .post(&url)
@@ -82,6 +74,68 @@ async fn test_register_existing_user_failure() {
             .unwrap();
     })
     .await;
+
+    assert_eq!(response.status, Status::Failure);
+}
+
+#[tokio::test]
+async fn test_login_success() {
+    let address = spawn_server().await;
+
+    let register_url = format!("http://{}/api/register", address);
+    let login_url = format!("http://{}/api/login", address);
+    let client = reqwest::Client::new();
+
+    let email = "login_success@test.com";
+    let body = serde_json::json!({
+        "email": email,
+        "password": "12345678"
+    });
+
+    let _ = client.post(&register_url).json(&body).send().await;
+
+    let response: GenericResponse<AccessTokenData> = client
+        .post(&login_url)
+        .json(&body)
+        .send()
+        .await
+        .expect("failed at send")
+        .json()
+        .await
+        .expect("failed at json");
+
+    clean_up_db(|db| async move {
+        db.execute(sqlx::query!("DELETE FROM users WHERE email = $1", email))
+            .await
+            .unwrap();
+    })
+    .await;
+
+    assert!(!response.data.unwrap().access_token.is_empty());
+}
+
+#[tokio::test]
+async fn test_login_failure() {
+    let address = spawn_server().await;
+
+    let login_url = format!("http://{}/api/login", address);
+    let client = reqwest::Client::new();
+
+    let email = "login_success@test.com";
+    let body = serde_json::json!({
+        "email": email,
+        "password": "12345678"
+    });
+
+    let response: GenericResponse<AccessTokenData> = client
+        .post(&login_url)
+        .json(&body)
+        .send()
+        .await
+        .expect("failed at send")
+        .json()
+        .await
+        .expect("failed at json");
 
     assert_eq!(response.status, Status::Failure);
 }
@@ -134,4 +188,10 @@ struct GenericResponse<T> {
 #[derive(Debug, Deserialize)]
 struct UserData {
     user: User,
+}
+
+#[cfg(test)]
+#[derive(Debug, Deserialize)]
+struct AccessTokenData {
+    access_token: String,
 }
