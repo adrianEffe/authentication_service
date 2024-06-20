@@ -8,7 +8,7 @@ use crate::{
         },
     },
     application::AppState,
-    model::user::User,
+    model::{login_response::LoginResponse, user::User},
 };
 use axum::{
     extract::State,
@@ -38,8 +38,15 @@ pub async fn login_handler(
         &data.env.access_token_private_key,
     )?;
 
-    let mut response =
-        Response::new(response_data(&Status::Success, "access_token", &access_token).to_string());
+    let mut response = Response::new(
+        response_data(
+            &Status::Success,
+            LoginResponse {
+                access_token: access_token.to_owned(),
+            },
+        )
+        .to_string(),
+    );
 
     let headers = set_cookies_in_header(&access_token, data.env.access_token_max_age)?;
 

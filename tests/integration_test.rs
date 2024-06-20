@@ -2,7 +2,7 @@ use authentication_service::{
     api::utils::status::Status,
     application::{connect_to_database, run},
     helper::config::Config,
-    model::user::User,
+    model::user::FilteredUser,
 };
 use dotenv::dotenv;
 use reqwest::header::AUTHORIZATION;
@@ -259,7 +259,7 @@ struct GenericResponse<T> {
 #[cfg(test)]
 #[derive(Debug, Deserialize)]
 struct UserData {
-    user: User,
+    user: FilteredUser,
 }
 
 #[cfg(test)]
