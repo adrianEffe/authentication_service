@@ -20,6 +20,7 @@ pub async fn register_handler(
         let error_response = response_message(&Status::Failure, &message);
         (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
     })?;
+
     let user =
         insert_user_in_db(&data.db, &body.email.to_ascii_lowercase(), &hashed_password).await?;
 
