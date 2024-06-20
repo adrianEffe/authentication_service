@@ -1,8 +1,18 @@
 use crate::{
-    api::endpoints::{healthcheck::healthcheck, login::login_handler, register::register_handler},
+    api::{
+        endpoints::{
+            get_me::get_me_handler, healthcheck::healthcheck, login::login_handler,
+            register::register_handler,
+        },
+        middlewares::authentication::auth,
+    },
     helper::config::Config,
 };
-use axum::{routing::get, routing::post, Router};
+use axum::{
+    middleware,
+    routing::{get, post},
+    Router,
+};
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 use std::sync::Arc;
 use tokio::net::TcpListener;
@@ -31,6 +41,11 @@ fn app(app_state: Arc<AppState>) -> Router {
         .route("/api/healthcheck", get(healthcheck))
         .route("/api/register", post(register_handler))
         .route("/api/login", post(login_handler))
+        .route(
+            "/api/users/me",
+            get(get_me_handler)
+                .route_layer(middleware::from_fn_with_state(app_state.clone(), auth)),
+        )
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
