@@ -23,6 +23,15 @@ services:
       - ./.env
     ports:
       - "5050:80"
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisDB:/data
+
 volumes:
   progresDB:
+  redisDB:
      
