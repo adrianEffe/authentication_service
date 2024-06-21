@@ -23,6 +23,7 @@ use tracing::Level;
 pub struct AppState {
     pub db: Pool<Postgres>,
     pub env: Config,
+    pub redis: Client,
 }
 
 pub async fn run(listener: TcpListener, config: Config) {
@@ -42,6 +43,7 @@ pub async fn run(listener: TcpListener, config: Config) {
     let app_state = Arc::new(AppState {
         db: pool,
         env: config,
+        redis: redis_client,
     });
 
     let app = app(app_state);
