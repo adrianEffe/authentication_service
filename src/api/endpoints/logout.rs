@@ -7,11 +7,11 @@ use axum::{
     Extension, Json,
 };
 use axum_extra::extract::cookie::{Cookie, SameSite};
-use redis::AsyncCommands;
 
 use crate::{
     api::utils::status::{response_message, Status},
     application::AppState,
+    helper::redis_helper,
     model::auth_middleware::AuthMiddleware,
 };
 
@@ -19,21 +19,10 @@ pub async fn logout_handler(
     Extension(auth_guard): Extension<AuthMiddleware>,
     State(data): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let mut redis_client = data
-        .redis
-        .get_multiplexed_async_connection()
+    redis_helper::delete_token_data(&data.redis, &auth_guard.access_token_uuid.to_string())
         .await
-        .map_err(|e| {
-            let message = format!("Redis error: {}", e);
-            let error_message = response_message(&Status::Failure, &message);
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_message))
-        })?;
-
-    redis_client
-        .del(auth_guard.access_token_uuid.to_string())
-        .await
-        .map_err(|e| {
-            let error_message = response_message(&Status::Failure, &e.to_string());
+        .map_err(|_| {
+            let error_message = response_message(&Status::Failure, "Redis failed to delete token");
             (StatusCode::INTERNAL_SERVER_ERROR, Json(error_message))
         })?;
 
