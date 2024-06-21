@@ -5,6 +5,7 @@ pub struct Config {
     pub access_token_public_key: String,
     pub access_token_expires_in: String,
     pub access_token_max_age: i64,
+    pub redis_url: String,
 }
 
 fn get_env(var_name: &str) -> String {
@@ -18,6 +19,7 @@ impl Config {
         let access_token_public_key = get_env("ACCESS_TOKEN_PUBLIC_KEY");
         let access_token_expires_in = get_env("ACCESS_TOKEN_EXPIRES_IN");
         let access_token_max_age = get_env("ACCESS_TOKEN_MAXAGE");
+        let redis_url = format!("{}:{}", get_env("REDIS_HOST"), get_env("REDIS_PORT"));
 
         Config {
             database_url,
@@ -25,6 +27,7 @@ impl Config {
             access_token_public_key,
             access_token_expires_in,
             access_token_max_age: access_token_max_age.parse::<i64>().unwrap(),
+            redis_url,
         }
     }
 }
