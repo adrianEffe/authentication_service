@@ -13,6 +13,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use redis::Client;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 use std::sync::Arc;
 use tokio::net::TcpListener;
@@ -22,14 +23,27 @@ use tracing::Level;
 pub struct AppState {
     pub db: Pool<Postgres>,
     pub env: Config,
+    pub redis: Client,
 }
 
 pub async fn run(listener: TcpListener, config: Config) {
     let pool = connect_to_database(&config).await;
 
+    let redis_client = match Client::open(config.redis_url.to_owned()) {
+        Ok(client) => {
+            println!("Connection to redis successful");
+            client
+        }
+        Err(err) => {
+            println!("Failed to connect to redis with error: {}", err);
+            std::process::exit(1);
+        }
+    };
+
     let app_state = Arc::new(AppState {
         db: pool,
         env: config,
+        redis: redis_client,
     });
 
     let app = app(app_state);

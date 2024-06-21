@@ -5,6 +5,7 @@ use authentication_service::{
     model::user::FilteredUser,
 };
 use dotenv::dotenv;
+use redis::{AsyncCommands, Client};
 use reqwest::header::AUTHORIZATION;
 use serde::Deserialize;
 use sqlx::{Executor, Pool, Postgres};
@@ -142,6 +143,57 @@ async fn test_login_failure() {
 }
 
 #[tokio::test]
+async fn test_login_revoked_token() {
+    let address = spawn_server().await;
+
+    let register_url = format!("http://{}/api/register", address);
+    let login_url = format!("http://{}/api/login", address);
+    let get_me_url = format!("http://{}/api/users/me", address);
+    let client = reqwest::Client::new();
+
+    let email = "login_revoked_failure@test.com";
+    let body = serde_json::json!({
+        "email": email,
+        "password": "12345678"
+    });
+
+    let _ = client.post(&register_url).json(&body).send().await;
+
+    let response: GenericResponse<AccessTokenData> = client
+        .post(&login_url)
+        .json(&body)
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
+
+    let token = response.data.unwrap().access_token;
+
+    revoke_token_from_redis(&token).await;
+
+    let response: GenericResponse<UserData> = client
+        .get(&get_me_url)
+        .header(AUTHORIZATION, format!("Bearer {}", token))
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
+
+    clean_up_db(|db| async move {
+        db.execute(sqlx::query!("DELETE FROM users WHERE email = $1", email))
+            .await
+            .unwrap();
+    })
+    .await;
+
+    assert_eq!(response.status, Status::Failure);
+}
+
+#[tokio::test]
 async fn test_get_me_success() {
     let address = spawn_server().await;
 
@@ -236,6 +288,25 @@ async fn spawn_server() -> SocketAddr {
     });
 
     address
+}
+
+#[cfg(test)]
+async fn revoke_token_from_redis(access_token: &str) {
+    use authentication_service::api::utils::jwt::verify_jwt;
+
+    let config = Config::init();
+    let access_token_uuid = verify_jwt(&config.access_token_public_key, access_token)
+        .unwrap()
+        .token_uuid;
+    let mut redis_client = Client::open(config.redis_url.to_owned())
+        .unwrap()
+        .get_multiplexed_async_connection()
+        .await
+        .unwrap();
+    let _: i64 = redis_client
+        .del(access_token_uuid.to_string())
+        .await
+        .unwrap();
 }
 
 #[cfg(test)]

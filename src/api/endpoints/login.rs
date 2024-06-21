@@ -8,7 +8,8 @@ use crate::{
         },
     },
     application::AppState,
-    model::{login_response::LoginResponse, user::User},
+    helper::redis_helper,
+    model::{login_response::LoginResponse, token::TokenDetails, user::User},
 };
 use axum::{
     extract::State,
@@ -32,11 +33,24 @@ pub async fn login_handler(
         return Err((StatusCode::BAD_REQUEST, Json(error_response)));
     }
 
-    let access_token = generate_access_token(
+    let access_token_details = generate_access_token(
         user.id,
         data.env.access_token_max_age,
         &data.env.access_token_private_key,
     )?;
+
+    redis_helper::save_token_data(&data, &access_token_details, data.env.access_token_max_age)
+        .await
+        .map_err(|e| {
+            let message = format!("Redis error: {}", e);
+            let error_response = response_message(&Status::Failure, &message);
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+        })?;
+
+    let access_token = access_token_details.token.ok_or_else(|| {
+        let error_response = response_message(&Status::Failure, "Failed to generate token");
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+    })?;
 
     let mut response = Response::new(
         response_data(
@@ -58,17 +72,11 @@ fn generate_access_token(
     user_id: uuid::Uuid,
     max_age: i64,
     private_key: &str,
-) -> Result<String, (StatusCode, Json<serde_json::Value>)> {
-    generate_jwt(user_id, max_age, private_key)
-        .map_err(|_| {
-            let error_message = response_message(&Status::Failure, "Failed to generate jwt detail");
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_message))
-        })?
-        .token
-        .ok_or_else(|| {
-            let error_message = response_message(&Status::Failure, "Failed to generate token");
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_message))
-        })
+) -> Result<TokenDetails, (StatusCode, Json<serde_json::Value>)> {
+    generate_jwt(user_id, max_age, private_key).map_err(|_| {
+        let error_message = response_message(&Status::Failure, "Failed to generate jwt detail");
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(error_message))
+    })
 }
 
 fn set_cookies_in_header(
