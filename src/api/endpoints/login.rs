@@ -77,11 +77,6 @@ fn generate_access_token(
         let error_message = response_message(&Status::Failure, "Failed to generate jwt detail");
         (StatusCode::INTERNAL_SERVER_ERROR, Json(error_message))
     })
-    // .token
-    // .ok_or_else(|| {
-    //     let error_message = response_message(&Status::Failure, "Failed to generate token");
-    //     (StatusCode::INTERNAL_SERVER_ERROR, Json(error_message))
-    // })
 }
 
 fn set_cookies_in_header(
