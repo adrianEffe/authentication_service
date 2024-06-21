@@ -19,7 +19,11 @@ impl Config {
         let access_token_public_key = get_env("ACCESS_TOKEN_PUBLIC_KEY");
         let access_token_expires_in = get_env("ACCESS_TOKEN_EXPIRES_IN");
         let access_token_max_age = get_env("ACCESS_TOKEN_MAXAGE");
-        let redis_url = format!("{}:{}", get_env("REDIS_HOST"), get_env("REDIS_PORT"));
+        let redis_url = format!(
+            "redis://{}:{}",
+            get_env("REDIS_HOST"),
+            get_env("REDIS_PORT")
+        );
 
         Config {
             database_url,
