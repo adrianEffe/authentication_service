@@ -37,32 +37,42 @@ pub async fn logout_handler(
             (StatusCode::INTERNAL_SERVER_ERROR, Json(error_message))
         })?;
 
-    let access_cookie = Cookie::build(("access_token", ""))
-        .path("/")
-        .max_age(time::Duration::minutes(-1))
-        .same_site(SameSite::Lax)
-        .http_only(true);
-
-    let logged_in_cookie = Cookie::build(("logged_in", "true"))
-        .path("/")
-        .max_age(time::Duration::minutes(-1))
-        .same_site(SameSite::Lax)
-        .http_only(false);
-
-    let mut headers = HeaderMap::new();
-
-    // TODO: remove unwrap
-    headers.append(
-        header::SET_COOKIE,
-        access_cookie.to_string().parse().unwrap(),
-    );
-    headers.append(
-        header::SET_COOKIE,
-        logged_in_cookie.to_string().parse().unwrap(),
-    );
+    let headers = set_cookies_in_header()?;
 
     let mut response =
         Response::new(response_message(&Status::Success, "User logged out").to_string());
     response.headers_mut().extend(headers);
     Ok(response)
+}
+
+fn set_cookies_in_header() -> Result<HeaderMap, (StatusCode, Json<serde_json::Value>)> {
+    let access_cookie = Cookie::build(("access_token", ""))
+        .path("/")
+        .max_age(time::Duration::minutes(-1))
+        .same_site(SameSite::Lax)
+        .http_only(true)
+        .to_string()
+        .parse()
+        .map_err(|_| {
+            let error_message = response_message(&Status::Failure, "Failed to parse access cookie");
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_message))
+        })?;
+
+    let logged_in_cookie = Cookie::build(("logged_in", "true"))
+        .path("/")
+        .max_age(time::Duration::minutes(-1))
+        .same_site(SameSite::Lax)
+        .http_only(false)
+        .to_string()
+        .parse()
+        .map_err(|_| {
+            let error_message =
+                response_message(&Status::Failure, "Failed to parse logged in cookie");
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_message))
+        })?;
+
+    let mut headers = HeaderMap::new();
+    headers.append(header::SET_COOKIE, access_cookie);
+    headers.append(header::SET_COOKIE, logged_in_cookie);
+    Ok(headers)
 }
