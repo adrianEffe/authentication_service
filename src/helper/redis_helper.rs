@@ -4,7 +4,7 @@ use anyhow::Result;
 use redis::AsyncCommands;
 use std::sync::Arc;
 
-async fn save_token_data(
+pub async fn save_token_data(
     data: &Arc<AppState>,
     token_details: &TokenDetails,
     max_age: i64,
