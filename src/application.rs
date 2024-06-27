@@ -2,7 +2,7 @@ use crate::{
     api::{
         endpoints::{
             get_me::get_me_handler, healthcheck::healthcheck, login::login_handler,
-            register::register_handler,
+            logout::logout_handler, register::register_handler,
         },
         middlewares::authentication::auth,
     },
@@ -55,6 +55,11 @@ fn app(app_state: Arc<AppState>) -> Router {
         .route("/api/healthcheck", get(healthcheck))
         .route("/api/register", post(register_handler))
         .route("/api/login", post(login_handler))
+        .route(
+            "/api/logout",
+            get(logout_handler)
+                .route_layer(middleware::from_fn_with_state(app_state.clone(), auth)),
+        )
         .route(
             "/api/users/me",
             get(get_me_handler)

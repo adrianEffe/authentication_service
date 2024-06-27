@@ -265,6 +265,55 @@ async fn test_get_me_failure() {
 }
 
 #[tokio::test]
+async fn test_logout_success() {
+    let address = spawn_server().await;
+
+    let register_url = format!("http://{}/api/register", address);
+    let login_url = format!("http://{}/api/login", address);
+    let logout_url = format!("http://{}/api/logout", address);
+    let client = reqwest::Client::new();
+
+    let email = "logout_success@test.com";
+    let body = serde_json::json!({
+        "email": email,
+        "password": "12345678"
+    });
+
+    let _ = client.post(&register_url).json(&body).send().await;
+
+    let response: GenericResponse<AccessTokenData> = client
+        .post(&login_url)
+        .json(&body)
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
+
+    let token = response.data.unwrap().access_token;
+
+    let response: GenericResponse<UserData> = client
+        .get(&logout_url)
+        .header(AUTHORIZATION, format!("Bearer {}", token))
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
+
+    clean_up_db(|db| async move {
+        db.execute(sqlx::query!("DELETE FROM users WHERE email = $1", email))
+            .await
+            .unwrap();
+    })
+    .await;
+
+    assert_eq!(response.status, Status::Success);
+}
+
+#[tokio::test]
 async fn test_healthcheck() {
     let address = spawn_server().await;
 
