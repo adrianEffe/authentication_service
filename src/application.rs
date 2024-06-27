@@ -55,7 +55,11 @@ fn app(app_state: Arc<AppState>) -> Router {
         .route("/api/healthcheck", get(healthcheck))
         .route("/api/register", post(register_handler))
         .route("/api/login", post(login_handler))
-        .route("/api/logout", get(logout_handler))
+        .route(
+            "/api/logout",
+            get(logout_handler)
+                .route_layer(middleware::from_fn_with_state(app_state.clone(), auth)),
+        )
         .route(
             "/api/users/me",
             get(get_me_handler)
