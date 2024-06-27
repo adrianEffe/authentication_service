@@ -13,11 +13,15 @@ use crate::{
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use sqlx::{Pool, Postgres};
 use std::fmt::Display;
+use std::future::Future;
 use std::sync::Arc;
 use thiserror::Error;
 
-pub trait AuthRepository {
-    fn register(&self, request: &RegisterUserRequest) -> Result<FilteredUser, RegisterUserError>;
+pub trait AuthRepository: Send + Sync + 'static {
+    fn register(
+        &self,
+        request: &RegisterUserRequest,
+    ) -> impl Future<Output = Result<FilteredUser, RegisterUserError>> + Send;
 }
 
 #[derive(Debug)]
@@ -46,7 +50,7 @@ impl Display for UserEmail {
 
 #[derive(Debug)]
 pub struct RegisterUserRequest {
-    email: UserEmail,
+    pub email: UserEmail,
 }
 
 #[derive(Debug, Error)]

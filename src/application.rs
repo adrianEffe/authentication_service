@@ -10,8 +10,9 @@ use crate::{
         middlewares::authentication::auth,
     },
     helper::config::Config,
+    model::user::{FilteredUser, User},
 };
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use axum::{
     middleware,
     routing::{get, post},
@@ -108,5 +109,29 @@ impl PostgresPool {
             .with_context(|| format!("failed to open database url {url}"))?;
 
         Ok(PostgresPool { pool })
+    }
+}
+
+impl AuthRepository for PostgresPool {
+    async fn register(
+        &self,
+        request: &crate::api::endpoints::register::RegisterUserRequest,
+    ) -> Result<crate::model::user::FilteredUser, crate::api::endpoints::register::RegisterUserError>
+    {
+        let user = sqlx::query_as!(
+            User,
+            "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *",
+            request.email.to_string().to_ascii_lowercase(),
+            "hashed_password" // TODO: hashed password
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| {
+            anyhow!(e).context(format!(
+                "Database error while registering user with email {}",
+                request.email
+            ))
+        })?;
+        Ok(FilteredUser::from(user))
     }
 }
