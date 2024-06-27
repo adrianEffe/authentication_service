@@ -118,6 +118,7 @@ impl AuthRepository for PostgresPool {
         request: &crate::api::endpoints::register::RegisterUserRequest,
     ) -> Result<crate::model::user::FilteredUser, crate::api::endpoints::register::RegisterUserError>
     {
+        // TODO: - check if user exists from register:: module;
         let user = sqlx::query_as!(
             User,
             "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *",
