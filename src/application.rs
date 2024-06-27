@@ -1,13 +1,17 @@
 use crate::{
     api::{
         endpoints::{
-            get_me::get_me_handler, healthcheck::healthcheck, login::login_handler,
-            logout::logout_handler, register::register_handler,
+            get_me::get_me_handler,
+            healthcheck::healthcheck,
+            login::login_handler,
+            logout::logout_handler,
+            register::{register_handler, AuthRepository},
         },
         middlewares::authentication::auth,
     },
     helper::config::Config,
 };
+use anyhow::Context;
 use axum::{
     middleware,
     routing::{get, post},
@@ -87,5 +91,22 @@ pub async fn connect_to_database(config: &Config) -> Pool<Postgres> {
             println!("Failed to connecto to db with error: {:?}", err);
             std::process::exit(1)
         }
+    }
+}
+
+#[derive(Debug)]
+pub struct PostgresPool {
+    pool: sqlx::Pool<Postgres>,
+}
+
+impl PostgresPool {
+    pub async fn new(url: &str) -> anyhow::Result<PostgresPool> {
+        let pool = PgPoolOptions::new()
+            .max_connections(10)
+            .connect(url)
+            .await
+            .with_context(|| format!("failed to open database url {url}"))?;
+
+        Ok(PostgresPool { pool })
     }
 }
