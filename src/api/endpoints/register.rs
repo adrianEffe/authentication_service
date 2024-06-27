@@ -12,7 +12,50 @@ use crate::{
 };
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use sqlx::{Pool, Postgres};
+use std::fmt::Display;
 use std::sync::Arc;
+use thiserror::Error;
+
+pub trait AuthRepository {
+    fn register(&self, request: &RegisterUserRequest) -> Result<FilteredUser, RegisterUserError>;
+}
+
+#[derive(Debug)]
+pub struct UserEmail(String);
+
+#[derive(Clone, Debug, Error)]
+#[error("user email cannot be empty")]
+pub struct UserEmailEmptyError;
+
+impl UserEmail {
+    pub fn new(raw: &str) -> Result<Self, UserEmailEmptyError> {
+        let trimmed = raw.trim();
+        if trimmed.is_empty() {
+            Err(UserEmailEmptyError)
+        } else {
+            Ok(Self(trimmed.to_string()))
+        }
+    }
+}
+
+impl Display for UserEmail {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+#[derive(Debug)]
+pub struct RegisterUserRequest {
+    email: UserEmail,
+}
+
+#[derive(Debug, Error)]
+pub enum RegisterUserError {
+    #[error("user with email {email} already exists")]
+    Duplicate { email: UserEmail },
+    #[error(transparent)]
+    Unknown(#[from] anyhow::Error),
+}
 
 pub async fn register_handler(
     State(data): State<Arc<AppState>>,
