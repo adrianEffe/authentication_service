@@ -1,4 +1,7 @@
-use crate::api::endpoints::register::{RegisterUserRequest, UserEmail, UserPassword};
+use crate::{
+    api::endpoints::register::{RegisterUserRequest, UserEmail, UserPassword},
+    application::ApiError,
+};
 use anyhow::Result;
 use serde::Deserialize;
 
@@ -9,7 +12,7 @@ pub struct RegisterUserSchema {
 }
 
 impl RegisterUserSchema {
-    pub fn try_into_domain(self) -> Result<RegisterUserRequest> {
+    pub fn try_into_domain(self) -> Result<RegisterUserRequest, ApiError> {
         let email = UserEmail::new(&self.email)?;
         let password = UserPassword::new(&self.password)?;
         Ok(RegisterUserRequest::new(email, password))

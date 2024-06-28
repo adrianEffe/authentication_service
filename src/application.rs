@@ -219,6 +219,7 @@ impl From<UserPasswordEmptyError> for ApiError {
     }
 }
 
+// TODO: - better handle with status codes
 impl IntoResponse for ApiError {
     fn into_response(self) -> axum::response::Response {
         let body = match self {

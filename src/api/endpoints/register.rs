@@ -104,8 +104,7 @@ pub async fn register_handler<AR: AuthRepository>(
     State(state): State<Arc<AppState<AR>>>,
     Json(body): Json<RegisterUserSchema>,
 ) -> Result<ApiResponse<FilteredUser>, ApiError> {
-    //TODO: - remove unwrap
-    let domain_request = body.try_into_domain().unwrap();
+    let domain_request = body.try_into_domain()?;
 
     state
         .auth_repository
