@@ -18,11 +18,11 @@ pub struct FilteredUser {
     pub updated_at: Option<DateTime<Utc>>,
 }
 
-impl FilteredUser {
-    pub fn from(user: User) -> Self {
+impl From<&User> for FilteredUser {
+    fn from(user: &User) -> Self {
         Self {
             id: user.id,
-            email: user.email,
+            email: user.email.to_string(),
             created_at: user.created_at,
             updated_at: user.updated_at,
         }

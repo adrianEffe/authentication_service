@@ -144,7 +144,7 @@ impl AuthRepository for PostgresDB {
                 request.email
             ))
         })?;
-        Ok(FilteredUser::from(user))
+        Ok(FilteredUser::from(&user))
     }
 }
 

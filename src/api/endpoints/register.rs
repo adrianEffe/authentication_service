@@ -118,7 +118,7 @@ pub async fn register_handler<AR: AuthRepository>(
     let user_response = response_data(
         &Status::Success,
         UserResponse {
-            user: FilteredUser::from(user),
+            user: FilteredUser::from(&user),
         },
     );
 

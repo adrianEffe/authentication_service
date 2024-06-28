@@ -14,7 +14,7 @@ pub async fn get_me_handler(
     Ok(Json(response_data(
         &Status::Success,
         UserResponse {
-            user: FilteredUser::from(jwt.user),
+            user: FilteredUser::from(&jwt.user),
         },
     )))
 }
