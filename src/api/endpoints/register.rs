@@ -61,8 +61,8 @@ pub enum RegisterUserError {
     Unknown(#[from] anyhow::Error),
 }
 
-pub async fn register_handler(
-    State(data): State<Arc<AppState>>,
+pub async fn register_handler<AR: AuthRepository>(
+    State(data): State<Arc<AppState<AR>>>,
     Json(body): Json<RegisterUserSchema>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     check_user_exists(&data.db, &body.email).await?;

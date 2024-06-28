@@ -1,11 +1,13 @@
-use crate::{application::AppState, model::token::TokenDetails};
+use crate::{
+    api::endpoints::register::AuthRepository, application::AppState, model::token::TokenDetails,
+};
 
 use anyhow::Result;
 use redis::{AsyncCommands, Client};
 use std::sync::Arc;
 
-pub async fn save_token_data(
-    data: &Arc<AppState>,
+pub async fn save_token_data<AR: AuthRepository>(
+    data: &Arc<AppState<AR>>,
     token_details: &TokenDetails,
     max_age: i64,
 ) -> Result<()> {

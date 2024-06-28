@@ -1,7 +1,10 @@
 use crate::{
-    api::utils::{
-        jwt::verify_jwt,
-        status::{response_message, Status},
+    api::{
+        endpoints::register::AuthRepository,
+        utils::{
+            jwt::verify_jwt,
+            status::{response_message, Status},
+        },
     },
     application::AppState,
     model::{auth_middleware::AuthMiddleware, token::TokenDetails, user::User},
@@ -19,9 +22,9 @@ use redis::{AsyncCommands, Client};
 use sqlx::{Pool, Postgres};
 use std::sync::Arc;
 
-pub async fn auth(
+pub async fn auth<AR: AuthRepository>(
     cookie_jar: CookieJar,
-    State(data): State<Arc<AppState>>,
+    State(data): State<Arc<AppState<AR>>>,
     mut req: Request<Body>,
     next: Next,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {

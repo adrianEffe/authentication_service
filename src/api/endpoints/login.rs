@@ -21,8 +21,10 @@ use axum_extra::extract::cookie::{Cookie, SameSite};
 use sqlx::{Pool, Postgres};
 use std::sync::Arc;
 
-pub async fn login_handler(
-    State(data): State<Arc<AppState>>,
+use super::register::AuthRepository;
+
+pub async fn login_handler<AR: AuthRepository>(
+    State(data): State<Arc<AppState<AR>>>,
     Json(body): Json<LoginUserSchema>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let user = fetch_user(&data.db, &body.email).await?;

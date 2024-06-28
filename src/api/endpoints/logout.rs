@@ -15,9 +15,11 @@ use crate::{
     model::auth_middleware::AuthMiddleware,
 };
 
-pub async fn logout_handler(
+use super::register::AuthRepository;
+
+pub async fn logout_handler<AR: AuthRepository>(
     Extension(auth_guard): Extension<AuthMiddleware>,
-    State(data): State<Arc<AppState>>,
+    State(data): State<Arc<AppState<AR>>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     redis_helper::delete_token_data(&data.redis, &auth_guard.access_token_uuid.to_string())
         .await
