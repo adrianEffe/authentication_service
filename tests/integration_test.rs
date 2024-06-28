@@ -25,7 +25,7 @@ async fn test_register_success() {
         "password": "12345678"
     });
 
-    let response: GenericResponse<UserData> = client
+    let response: GenericResponse<FilteredUser> = client
         .post(&url)
         .json(&body)
         .send()
@@ -42,7 +42,7 @@ async fn test_register_success() {
     })
     .await;
 
-    assert_eq!(response.data.unwrap().user.email, email);
+    assert_eq!(response.data.unwrap().email, email);
 }
 
 #[tokio::test]
@@ -60,7 +60,7 @@ async fn test_register_existing_user_failure() {
 
     let _ = client.post(&url).json(&body).send().await;
 
-    let response: GenericResponse<UserData> = client
+    let response: GenericResponse<FilteredUser> = client
         .post(&url)
         .json(&body)
         .send()
@@ -377,6 +377,7 @@ struct GenericResponse<T> {
 }
 
 #[cfg(test)]
+#[deprecated]
 #[derive(Debug, Deserialize)]
 struct UserData {
     user: FilteredUser,
