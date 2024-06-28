@@ -17,8 +17,10 @@ use crate::{
     model::user::{FilteredUser, User},
 };
 use anyhow::{anyhow, Context};
+use axum::{http::StatusCode, response::Response, Json};
 use axum::{
     middleware,
+    response::IntoResponse,
     routing::{get, post},
     Router,
 };
@@ -217,6 +219,16 @@ impl From<UserPasswordEmptyError> for ApiError {
     }
 }
 
+impl IntoResponse for ApiError {
+    fn into_response(self) -> axum::response::Response {
+        let body = match self {
+            ApiError::InternalServerError(msg) => msg,
+            ApiError::UnprocessableEntity(msg) => msg,
+        };
+        (StatusCode::INTERNAL_SERVER_ERROR, body).into_response()
+    }
+}
+
 // TODO: move this
 
 #[derive(Debug, Serialize)]
@@ -227,7 +239,7 @@ pub struct ApiResponse<T> {
 }
 
 impl<T> ApiResponse<T> {
-    fn success(data: T) -> Self {
+    pub fn success(data: T) -> Self {
         ApiResponse {
             status: Status::Success,
             data: Some(data),
@@ -235,11 +247,22 @@ impl<T> ApiResponse<T> {
         }
     }
 
-    fn error(error: ApiError) -> Self {
+    pub fn error(error: ApiError) -> Self {
         ApiResponse {
             status: Status::Failure,
             data: None,
             message: Some(error.to_string()),
         }
+    }
+}
+
+// TODO: - make this better so you can pass proper status codes
+impl<T: Serialize> IntoResponse for ApiResponse<T> {
+    fn into_response(self) -> Response {
+        let status_code = match self.status {
+            Status::Success => StatusCode::OK,
+            Status::Failure => StatusCode::BAD_REQUEST,
+        };
+        (status_code, Json(self)).into_response()
     }
 }

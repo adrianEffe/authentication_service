@@ -9,7 +9,7 @@ pub struct RegisterUserSchema {
 }
 
 impl RegisterUserSchema {
-    fn try_into_domain(self) -> Result<RegisterUserRequest> {
+    pub fn try_into_domain(self) -> Result<RegisterUserRequest> {
         let email = UserEmail::new(&self.email)?;
         let password = UserPassword::new(&self.password)?;
         Ok(RegisterUserRequest::new(email, password))

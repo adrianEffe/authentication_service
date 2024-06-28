@@ -6,6 +6,7 @@ pub enum Status {
     Failure,
 }
 
+// TODO: - remove below as ApiResponse handles most of this
 impl Status {
     fn raw_value(&self) -> &str {
         match &self {
