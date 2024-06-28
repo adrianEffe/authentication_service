@@ -8,6 +8,7 @@ use crate::{
             register::{register_handler, AuthRepository, RegisterUserError, RegisterUserRequest},
         },
         middlewares::authentication::auth,
+        utils::password_hasher,
     },
     helper::config::Config,
     model::user::{FilteredUser, User},
@@ -124,11 +125,13 @@ impl AuthRepository for PostgresDB {
     {
         self.is_unique_constrain_violation(request).await?;
 
+        let hashed_password = password_hasher::hash_password(request.password.get())?;
+
         let user = sqlx::query_as!(
             User,
             "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *",
-            request.email.to_string().to_ascii_lowercase(),
-            "hashed_password" // TODO: hashed password
+            request.email.get().to_ascii_lowercase(),
+            hashed_password,
         )
         .fetch_one(&self.pool)
         .await

@@ -1,13 +1,12 @@
-use argon2::{
-    password_hash::Error, password_hash::SaltString, Argon2, PasswordHash, PasswordHasher,
-    PasswordVerifier,
-};
+use anyhow::anyhow;
+use argon2::{password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use rand_core::OsRng;
 
-pub fn hash_password(password: &str) -> Result<String, Error> {
+pub fn hash_password(password: &str) -> anyhow::Result<String> {
     let salt = SaltString::generate(&mut OsRng);
     Argon2::default()
         .hash_password(password.as_bytes(), &salt)
+        .map_err(|e| anyhow!(e).context("Failed to hash password"))
         .map(|hash| hash.to_string())
 }
 
