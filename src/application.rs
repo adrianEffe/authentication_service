@@ -5,7 +5,7 @@ use crate::{
             healthcheck::healthcheck,
             login::login_handler,
             logout::logout_handler,
-            register::{register_handler, AuthRepository},
+            register::{register_handler, AuthRepository, RegisterUserError, RegisterUserRequest},
         },
         middlewares::authentication::auth,
     },
@@ -26,7 +26,7 @@ use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
 
 pub struct AppState<AR: AuthRepository> {
-    pub auth_repository: Arc<AR>,
+    pub auth_repository: AR,
     pub db: Pool<Postgres>,
     pub env: Config,
     pub redis: Client,
@@ -49,7 +49,7 @@ pub async fn run(listener: TcpListener, config: Config) {
     let postgres = PostgresPool::new(&config.database_url).await.unwrap();
 
     let app_state = Arc::new(AppState {
-        auth_repository: Arc::new(postgres),
+        auth_repository: postgres,
         db: pool,
         env: config,
         redis: redis_client,
@@ -122,7 +122,8 @@ impl AuthRepository for PostgresPool {
         request: &crate::api::endpoints::register::RegisterUserRequest,
     ) -> Result<crate::model::user::FilteredUser, crate::api::endpoints::register::RegisterUserError>
     {
-        // TODO: - check if user exists from register:: module;
+        self.is_unique_constrain_violation(request).await?;
+
         let user = sqlx::query_as!(
             User,
             "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *",
@@ -138,5 +139,32 @@ impl AuthRepository for PostgresPool {
             ))
         })?;
         Ok(FilteredUser::from(user))
+    }
+}
+
+impl PostgresPool {
+    async fn is_unique_constrain_violation(
+        &self,
+        request: &RegisterUserRequest,
+    ) -> anyhow::Result<()> {
+        let user_exists: Option<bool> =
+            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)")
+                .bind(request.email.to_string().to_ascii_lowercase())
+                .fetch_one(&self.pool)
+                .await
+                .map_err(|e| {
+                    anyhow!(e).context(format!("Database error for: {}", request.email))
+                })?;
+        if let Some(exists) = user_exists {
+            if exists {
+                return Err(RegisterUserError::Duplicate {
+                    email: request.email.clone(),
+                }
+                .into());
+            } else {
+                return Ok(());
+            }
+        }
+        Ok(())
     }
 }

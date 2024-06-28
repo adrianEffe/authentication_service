@@ -24,7 +24,7 @@ pub trait AuthRepository: Send + Sync + 'static {
     ) -> impl Future<Output = Result<FilteredUser, RegisterUserError>> + Send;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UserEmail(String);
 
 #[derive(Clone, Debug, Error)]
