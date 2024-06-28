@@ -46,7 +46,7 @@ pub async fn run(listener: TcpListener, config: Config) {
         }
     };
 
-    let postgres = PostgresPool::new(&config.database_url).await.unwrap();
+    let postgres = PostgresDB::new(&config.database_url).await.unwrap();
 
     let app_state = Arc::new(AppState {
         auth_repository: postgres,
@@ -100,23 +100,23 @@ pub async fn connect_to_database(config: &Config) -> Pool<Postgres> {
 }
 
 #[derive(Debug)]
-pub struct PostgresPool {
+pub struct PostgresDB {
     pool: sqlx::Pool<Postgres>,
 }
 
-impl PostgresPool {
-    pub async fn new(url: &str) -> anyhow::Result<PostgresPool> {
+impl PostgresDB {
+    pub async fn new(url: &str) -> anyhow::Result<PostgresDB> {
         let pool = PgPoolOptions::new()
             .max_connections(10)
             .connect(url)
             .await
             .with_context(|| format!("failed to open database url {url}"))?;
 
-        Ok(PostgresPool { pool })
+        Ok(PostgresDB { pool })
     }
 }
 
-impl AuthRepository for PostgresPool {
+impl AuthRepository for PostgresDB {
     async fn register(
         &self,
         request: &crate::api::endpoints::register::RegisterUserRequest,
@@ -142,7 +142,7 @@ impl AuthRepository for PostgresPool {
     }
 }
 
-impl PostgresPool {
+impl PostgresDB {
     async fn is_unique_constrain_violation(
         &self,
         request: &RegisterUserRequest,
