@@ -11,7 +11,7 @@ use crate::{
             },
         },
         middlewares::authentication::auth,
-        utils::password_hasher,
+        utils::{password_hasher, status::Status},
     },
     helper::config::Config,
     model::user::{FilteredUser, User},
@@ -23,6 +23,7 @@ use axum::{
     Router,
 };
 use redis::Client;
+use serde::Serialize;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 use std::sync::Arc;
 use tokio::net::TcpListener;
@@ -181,6 +182,15 @@ pub enum ApiError {
     UnprocessableEntity(String),
 }
 
+impl std::fmt::Display for ApiError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ApiError::InternalServerError(msg) => write!(f, "{}", msg),
+            ApiError::UnprocessableEntity(msg) => write!(f, "{}", msg),
+        }
+    }
+}
+
 impl From<RegisterUserError> for ApiError {
     fn from(value: RegisterUserError) -> Self {
         match value {
@@ -204,5 +214,32 @@ impl From<UserEmailEmptyError> for ApiError {
 impl From<UserPasswordEmptyError> for ApiError {
     fn from(_: UserPasswordEmptyError) -> Self {
         Self::UnprocessableEntity("Password cannot be empty".to_string())
+    }
+}
+
+// TODO: move this
+
+#[derive(Debug, Serialize)]
+pub struct ApiResponse<T> {
+    status: Status,
+    data: Option<T>,
+    message: Option<String>,
+}
+
+impl<T> ApiResponse<T> {
+    fn success(data: T) -> Self {
+        ApiResponse {
+            status: Status::Success,
+            data: Some(data),
+            message: None,
+        }
+    }
+
+    fn error(error: ApiError) -> Self {
+        ApiResponse {
+            status: Status::Failure,
+            data: None,
+            message: Some(error.to_string()),
+        }
     }
 }
