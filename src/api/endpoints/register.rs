@@ -86,6 +86,12 @@ pub struct RegisterUserRequest {
     pub password: UserPassword,
 }
 
+impl RegisterUserRequest {
+    pub fn new(email: UserEmail, password: UserPassword) -> Self {
+        RegisterUserRequest { email, password }
+    }
+}
+
 #[derive(Debug, Error)]
 pub enum RegisterUserError {
     #[error("user with email {email} already exists")]
