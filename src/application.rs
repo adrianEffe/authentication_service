@@ -1,3 +1,6 @@
+use crate::model::register_user::{
+    RegisterUserError, RegisterUserRequest, UserEmailEmptyError, UserPasswordEmptyError,
+};
 use crate::{
     api::{
         endpoints::{
@@ -5,10 +8,7 @@ use crate::{
             healthcheck::healthcheck,
             login::login_handler,
             logout::logout_handler,
-            register::{
-                register_handler, AuthRepository, RegisterUserError, RegisterUserRequest,
-                UserEmailEmptyError, UserPasswordEmptyError,
-            },
+            register::{register_handler, AuthRepository},
         },
         middlewares::authentication::auth,
         utils::{password_hasher, status::Status},
@@ -126,9 +126,8 @@ impl PostgresDB {
 impl AuthRepository for PostgresDB {
     async fn register(
         &self,
-        request: &crate::api::endpoints::register::RegisterUserRequest,
-    ) -> Result<crate::model::user::FilteredUser, crate::api::endpoints::register::RegisterUserError>
-    {
+        request: &RegisterUserRequest,
+    ) -> Result<FilteredUser, RegisterUserError> {
         self.is_unique_constrain_violation(request).await?;
 
         let hashed_password = password_hasher::hash_password(request.password.get())?;

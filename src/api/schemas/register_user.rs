@@ -1,6 +1,6 @@
 use crate::{
-    api::endpoints::register::{RegisterUserRequest, UserEmail, UserPassword},
     application::ApiError,
+    model::register_user::{RegisterUserRequest, UserEmail, UserPassword},
 };
 use anyhow::Result;
 use serde::Deserialize;

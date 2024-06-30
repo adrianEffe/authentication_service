@@ -29,6 +29,7 @@ impl From<&User> for FilteredUser {
     }
 }
 
+#[deprecated]
 #[derive(Serialize, Debug)]
 pub struct UserResponse {
     pub user: FilteredUser,
