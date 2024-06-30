@@ -8,6 +8,7 @@ use crate::{
         },
     },
     application::AppState,
+    domain::repositories::auth_repository::AuthRepository,
     helper::redis_helper,
     model::{login_response::LoginResponse, token::TokenDetails, user::User},
 };
@@ -20,8 +21,6 @@ use axum::{
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use sqlx::{Pool, Postgres};
 use std::sync::Arc;
-
-use super::register::AuthRepository;
 
 pub async fn login_handler<AR: AuthRepository>(
     State(data): State<Arc<AppState<AR>>>,

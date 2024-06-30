@@ -1,12 +1,10 @@
 use crate::{
-    api::{
-        endpoints::register::AuthRepository,
-        utils::{
-            jwt::verify_jwt,
-            status::{response_message, Status},
-        },
+    api::utils::{
+        jwt::verify_jwt,
+        status::{response_message, Status},
     },
     application::AppState,
+    domain::repositories::auth_repository::AuthRepository,
     model::{auth_middleware::AuthMiddleware, token::TokenDetails, user::User},
 };
 use axum::{

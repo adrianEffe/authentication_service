@@ -1,5 +1,6 @@
 use crate::{
-    api::endpoints::register::AuthRepository, application::AppState, model::token::TokenDetails,
+    application::AppState, domain::repositories::auth_repository::AuthRepository,
+    model::token::TokenDetails,
 };
 
 use anyhow::Result;

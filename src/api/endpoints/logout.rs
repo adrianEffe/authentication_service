@@ -11,11 +11,10 @@ use axum_extra::extract::cookie::{Cookie, SameSite};
 use crate::{
     api::utils::status::{response_message, Status},
     application::AppState,
+    domain::repositories::auth_repository::AuthRepository,
     helper::redis_helper,
     model::auth_middleware::AuthMiddleware,
 };
-
-use super::register::AuthRepository;
 
 pub async fn logout_handler<AR: AuthRepository>(
     Extension(auth_guard): Extension<AuthMiddleware>,
