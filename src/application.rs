@@ -1,5 +1,4 @@
 use crate::domain::repositories::auth_repository::AuthRepository;
-use crate::model::api_error::ApiError;
 use crate::repositories::auth_repository::PostgresDB;
 use crate::{
     api::{
@@ -8,19 +7,15 @@ use crate::{
             logout::logout_handler, register::register_handler,
         },
         middlewares::authentication::auth,
-        utils::status::Status,
     },
     helper::config::Config,
 };
-use axum::{http::StatusCode, response::Response, Json};
 use axum::{
     middleware,
-    response::IntoResponse,
     routing::{get, post},
     Router,
 };
 use redis::Client;
-use serde::Serialize;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 use std::sync::Arc;
 use tokio::net::TcpListener;
@@ -98,43 +93,5 @@ pub async fn connect_to_database(config: &Config) -> Pool<Postgres> {
             println!("Failed to connecto to db with error: {:?}", err);
             std::process::exit(1)
         }
-    }
-}
-
-// TODO: move this
-
-#[derive(Debug, Serialize)]
-pub struct ApiResponse<T> {
-    status: Status,
-    data: Option<T>,
-    message: Option<String>,
-}
-
-impl<T> ApiResponse<T> {
-    pub fn success(data: T) -> Self {
-        ApiResponse {
-            status: Status::Success,
-            data: Some(data),
-            message: None,
-        }
-    }
-
-    pub fn error(error: ApiError) -> Self {
-        ApiResponse {
-            status: Status::Failure,
-            data: None,
-            message: Some(error.to_string()),
-        }
-    }
-}
-
-// TODO: - make this better so you can pass proper status codes
-impl<T: Serialize> IntoResponse for ApiResponse<T> {
-    fn into_response(self) -> Response {
-        let status_code = match self.status {
-            Status::Success => StatusCode::OK,
-            Status::Failure => StatusCode::BAD_REQUEST,
-        };
-        (status_code, Json(self)).into_response()
     }
 }
