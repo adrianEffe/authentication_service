@@ -1,3 +1,4 @@
+pub mod api_error;
 pub mod auth_middleware;
 pub mod login_response;
 pub mod register_user;

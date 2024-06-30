@@ -1,14 +1,9 @@
-use crate::api::{
-    schemas::register_user::RegisterUserSchema,
-    utils::{
-        password_hasher,
-        status::{response_data, response_message, Status},
-    },
-};
-use crate::application::{ApiError, ApiResponse, AppState};
+use crate::api::schemas::register_user::RegisterUserSchema;
+use crate::application::{ApiResponse, AppState};
+use crate::model::api_error::ApiError;
 use crate::model::register_user::{RegisterUserError, RegisterUserRequest};
-use crate::model::user::{FilteredUser, User};
-use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use crate::model::user::FilteredUser;
+use axum::{extract::State, Json};
 use std::future::Future;
 use std::sync::Arc;
 
