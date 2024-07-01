@@ -5,7 +5,12 @@ use crate::{
     },
     application::AppState,
     domain::repositories::auth_repository::AuthRepository,
-    model::{auth_middleware::AuthMiddleware, token::TokenDetails, user::User},
+    model::{
+        auth::{AuthRequest, UserId},
+        auth_middleware::AuthMiddleware,
+        token::TokenDetails,
+        user::User,
+    },
 };
 use axum::{
     body::Body,
@@ -38,7 +43,8 @@ pub async fn auth<AR: AuthRepository>(
 
     verify_active_session(&state.redis, &access_token_details).await?;
 
-    let user = fetch_user_from_db(&state.db, access_token_details.user_id).await?;
+    let request = AuthRequest::new(access_token_details.user_id);
+    let user = state.auth_repository.auth(&request).await.unwrap(); // FIX UNWRAP
 
     req.extensions_mut().insert(AuthMiddleware {
         user,
