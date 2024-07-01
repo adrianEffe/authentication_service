@@ -6,7 +6,7 @@ use authentication_service::{
 };
 use dotenv::dotenv;
 use redis::{AsyncCommands, Client};
-use reqwest::header::AUTHORIZATION;
+use reqwest::{header::AUTHORIZATION, StatusCode};
 use serde::Deserialize;
 use sqlx::{Executor, Pool, Postgres};
 use std::net::SocketAddr;
@@ -60,15 +60,7 @@ async fn test_register_existing_user_failure() {
 
     let _ = client.post(&url).json(&body).send().await;
 
-    let response: GenericResponse<FilteredUser> = client
-        .post(&url)
-        .json(&body)
-        .send()
-        .await
-        .unwrap()
-        .json()
-        .await
-        .unwrap();
+    let response = client.post(&url).json(&body).send().await.unwrap();
 
     clean_up_db(|db| async move {
         db.execute(sqlx::query!("DELETE FROM users WHERE email = $1", email))
@@ -77,7 +69,7 @@ async fn test_register_existing_user_failure() {
     })
     .await;
 
-    assert_eq!(response.status, Status::Failure);
+    assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
 }
 
 #[tokio::test]

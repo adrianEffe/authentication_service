@@ -53,7 +53,7 @@ impl PostgresDB {
     async fn is_unique_constrain_violation(
         &self,
         request: &RegisterUserRequest,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<(), RegisterUserError> {
         let user_exists: Option<bool> =
             sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)")
                 .bind(request.email.to_string().to_ascii_lowercase())
@@ -66,8 +66,7 @@ impl PostgresDB {
             if exists {
                 return Err(RegisterUserError::Duplicate {
                     email: request.email.clone(),
-                }
-                .into());
+                });
             } else {
                 return Ok(());
             }

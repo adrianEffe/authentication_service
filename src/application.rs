@@ -79,6 +79,7 @@ fn app<AR: AuthRepository>(app_state: Arc<AppState<AR>>) -> Router {
         .with_state(app_state)
 }
 
+#[deprecated]
 pub async fn connect_to_database(config: &Config) -> Pool<Postgres> {
     match PgPoolOptions::new()
         .max_connections(10)

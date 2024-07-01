@@ -18,7 +18,7 @@ impl std::fmt::Display for ApiError {
 
 impl From<RegisterUserError> for ApiError {
     fn from(value: RegisterUserError) -> Self {
-        match value {
+        match &value {
             RegisterUserError::Duplicate { email } => {
                 Self::UnprocessableEntity(format!("User with email {} already exists", email))
             }
@@ -42,13 +42,12 @@ impl From<UserPasswordEmptyError> for ApiError {
     }
 }
 
-// TODO: - better handle with status codes
 impl IntoResponse for ApiError {
     fn into_response(self) -> axum::response::Response {
-        let body = match self {
-            ApiError::InternalServerError(msg) => msg,
-            ApiError::UnprocessableEntity(msg) => msg,
-        };
-        (StatusCode::INTERNAL_SERVER_ERROR, body).into_response()
+        match self {
+            ApiError::InternalServerError(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
+            ApiError::UnprocessableEntity(msg) => (StatusCode::UNPROCESSABLE_ENTITY, msg),
+        }
+        .into_response()
     }
 }

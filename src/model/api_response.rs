@@ -32,7 +32,6 @@ impl<T> ApiResponse<T> {
     }
 }
 
-// TODO: - make this better so you can pass proper status codes
 impl<T: Serialize> IntoResponse for ApiResponse<T> {
     fn into_response(self) -> Response {
         let status_code = match self.status {

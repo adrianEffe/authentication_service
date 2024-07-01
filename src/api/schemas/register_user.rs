@@ -2,7 +2,6 @@ use crate::model::{
     api_error::ApiError,
     register_user::{RegisterUserRequest, UserEmail, UserPassword},
 };
-use anyhow::Result;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
