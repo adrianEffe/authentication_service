@@ -4,12 +4,13 @@ use crate::model::{
 };
 use axum::{http::StatusCode, response::IntoResponse};
 
-use super::register_user::PasswordHashingError;
+use super::{login_user::LoginUserError, register_user::PasswordHashingError};
 
 #[derive(Debug)]
 pub enum ApiError {
     InternalServerError(String),
     UnprocessableEntity(String),
+    Unauthorized(String),
 }
 
 impl std::fmt::Display for ApiError {
@@ -17,6 +18,7 @@ impl std::fmt::Display for ApiError {
         match self {
             ApiError::InternalServerError(msg) => write!(f, "{}", msg),
             ApiError::UnprocessableEntity(msg) => write!(f, "{}", msg),
+            ApiError::Unauthorized(msg) => write!(f, "{}", msg),
         }
     }
 }
@@ -53,11 +55,26 @@ impl From<PasswordHashingError> for ApiError {
     }
 }
 
+impl From<LoginUserError> for ApiError {
+    fn from(value: LoginUserError) -> Self {
+        match &value {
+            LoginUserError::InvalidCredentials => {
+                Self::Unauthorized("Invalid credentials".to_string())
+            }
+            LoginUserError::Unknown(cause) => {
+                tracing::error!("{:?}\n{}", cause, cause.backtrace());
+                Self::InternalServerError("Internal server error".to_string())
+            }
+        }
+    }
+}
+
 impl IntoResponse for ApiError {
     fn into_response(self) -> axum::response::Response {
         match self {
             ApiError::InternalServerError(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
             ApiError::UnprocessableEntity(msg) => (StatusCode::UNPROCESSABLE_ENTITY, msg),
+            ApiError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg),
         }
         .into_response()
     }
