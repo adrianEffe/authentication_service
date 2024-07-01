@@ -1,11 +1,12 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub enum Status {
     Success,
     Failure,
 }
 
+// TODO: - remove below as ApiResponse handles most of this
 impl Status {
     fn raw_value(&self) -> &str {
         match &self {

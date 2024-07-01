@@ -1,3 +1,5 @@
+use crate::domain::repositories::auth_repository::AuthRepository;
+use crate::repositories::auth_repository::PostgresDB;
 use crate::{
     api::{
         endpoints::{
@@ -20,7 +22,8 @@ use tokio::net::TcpListener;
 use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
 
-pub struct AppState {
+pub struct AppState<AR: AuthRepository> {
+    pub auth_repository: AR,
     pub db: Pool<Postgres>,
     pub env: Config,
     pub redis: Client,
@@ -40,7 +43,10 @@ pub async fn run(listener: TcpListener, config: Config) {
         }
     };
 
+    let postgres = PostgresDB::new(&config.database_url).await.unwrap();
+
     let app_state = Arc::new(AppState {
+        auth_repository: postgres,
         db: pool,
         env: config,
         redis: redis_client,
@@ -50,7 +56,7 @@ pub async fn run(listener: TcpListener, config: Config) {
     axum::serve(listener, app).await.unwrap();
 }
 
-fn app(app_state: Arc<AppState>) -> Router {
+fn app<AR: AuthRepository>(app_state: Arc<AppState<AR>>) -> Router {
     Router::new()
         .route("/api/healthcheck", get(healthcheck))
         .route("/api/register", post(register_handler))
@@ -73,6 +79,7 @@ fn app(app_state: Arc<AppState>) -> Router {
         .with_state(app_state)
 }
 
+#[deprecated]
 pub async fn connect_to_database(config: &Config) -> Pool<Postgres> {
     match PgPoolOptions::new()
         .max_connections(10)

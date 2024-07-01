@@ -6,7 +6,7 @@ use authentication_service::{
 };
 use dotenv::dotenv;
 use redis::{AsyncCommands, Client};
-use reqwest::header::AUTHORIZATION;
+use reqwest::{header::AUTHORIZATION, StatusCode};
 use serde::Deserialize;
 use sqlx::{Executor, Pool, Postgres};
 use std::net::SocketAddr;
@@ -25,7 +25,7 @@ async fn test_register_success() {
         "password": "12345678"
     });
 
-    let response: GenericResponse<UserData> = client
+    let response: GenericResponse<FilteredUser> = client
         .post(&url)
         .json(&body)
         .send()
@@ -42,7 +42,7 @@ async fn test_register_success() {
     })
     .await;
 
-    assert_eq!(response.data.unwrap().user.email, email);
+    assert_eq!(response.data.unwrap().email, email);
 }
 
 #[tokio::test]
@@ -60,15 +60,7 @@ async fn test_register_existing_user_failure() {
 
     let _ = client.post(&url).json(&body).send().await;
 
-    let response: GenericResponse<UserData> = client
-        .post(&url)
-        .json(&body)
-        .send()
-        .await
-        .unwrap()
-        .json()
-        .await
-        .unwrap();
+    let response = client.post(&url).json(&body).send().await.unwrap();
 
     clean_up_db(|db| async move {
         db.execute(sqlx::query!("DELETE FROM users WHERE email = $1", email))
@@ -77,7 +69,7 @@ async fn test_register_existing_user_failure() {
     })
     .await;
 
-    assert_eq!(response.status, Status::Failure);
+    assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
 }
 
 #[tokio::test]
@@ -377,6 +369,7 @@ struct GenericResponse<T> {
 }
 
 #[cfg(test)]
+#[deprecated]
 #[derive(Debug, Deserialize)]
 struct UserData {
     user: FilteredUser,

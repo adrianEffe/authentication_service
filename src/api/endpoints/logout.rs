@@ -11,13 +11,14 @@ use axum_extra::extract::cookie::{Cookie, SameSite};
 use crate::{
     api::utils::status::{response_message, Status},
     application::AppState,
+    domain::repositories::auth_repository::AuthRepository,
     helper::redis_helper,
     model::auth_middleware::AuthMiddleware,
 };
 
-pub async fn logout_handler(
+pub async fn logout_handler<AR: AuthRepository>(
     Extension(auth_guard): Extension<AuthMiddleware>,
-    State(data): State<Arc<AppState>>,
+    State(data): State<Arc<AppState<AR>>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     redis_helper::delete_token_data(&data.redis, &auth_guard.access_token_uuid.to_string())
         .await

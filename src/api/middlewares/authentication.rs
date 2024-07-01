@@ -4,6 +4,7 @@ use crate::{
         status::{response_message, Status},
     },
     application::AppState,
+    domain::repositories::auth_repository::AuthRepository,
     model::{auth_middleware::AuthMiddleware, token::TokenDetails, user::User},
 };
 use axum::{
@@ -19,9 +20,9 @@ use redis::{AsyncCommands, Client};
 use sqlx::{Pool, Postgres};
 use std::sync::Arc;
 
-pub async fn auth(
+pub async fn auth<AR: AuthRepository>(
     cookie_jar: CookieJar,
-    State(data): State<Arc<AppState>>,
+    State(data): State<Arc<AppState<AR>>>,
     mut req: Request<Body>,
     next: Next,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
