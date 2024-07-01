@@ -2,11 +2,17 @@ use thiserror::Error;
 
 #[derive(Debug)]
 pub struct AuthRequest {
-    user_id: UserId,
+    pub user_id: UserId,
 }
 
 #[derive(Debug)]
 pub struct UserId(uuid::Uuid);
+
+impl UserId {
+    pub fn get(&self) -> &uuid::Uuid {
+        &self.0
+    }
+}
 
 #[derive(Debug, Error)]
 pub enum AuthorizationError {

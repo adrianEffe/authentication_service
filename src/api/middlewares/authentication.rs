@@ -22,13 +22,13 @@ use std::sync::Arc;
 
 pub async fn auth<AR: AuthRepository>(
     cookie_jar: CookieJar,
-    State(data): State<Arc<AppState<AR>>>,
+    State(state): State<Arc<AppState<AR>>>,
     mut req: Request<Body>,
     next: Next,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let access_token = extract_access_token(cookie_jar, &req)?;
 
-    let access_token_details = match verify_jwt(&data.env.access_token_public_key, &access_token) {
+    let access_token_details = match verify_jwt(&state.env.access_token_public_key, &access_token) {
         Ok(token_details) => token_details,
         Err(e) => {
             let error_response = response_message(&Status::Failure, &e.to_string());
@@ -36,9 +36,9 @@ pub async fn auth<AR: AuthRepository>(
         }
     };
 
-    verify_active_session(&data.redis, &access_token_details).await?;
+    verify_active_session(&state.redis, &access_token_details).await?;
 
-    let user = fetch_user_from_db(&data.db, access_token_details.user_id).await?;
+    let user = fetch_user_from_db(&state.db, access_token_details.user_id).await?;
 
     req.extensions_mut().insert(AuthMiddleware {
         user,
