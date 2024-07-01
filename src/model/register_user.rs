@@ -1,15 +1,21 @@
-use core::fmt::Display;
+use crate::api::utils::password_hasher;
+
+use super::{user_email::UserEmail, user_password::UserPassword};
+use anyhow::Result;
 use thiserror::Error;
 
 #[derive(Debug)]
 pub struct RegisterUserRequest {
     pub email: UserEmail,
-    pub password: UserPassword,
+    pub hashed_password: HashedUserPassword,
 }
 
 impl RegisterUserRequest {
-    pub fn new(email: UserEmail, password: UserPassword) -> Self {
-        RegisterUserRequest { email, password }
+    pub fn new(email: UserEmail, hashed_password: HashedUserPassword) -> Self {
+        RegisterUserRequest {
+            email,
+            hashed_password,
+        }
     }
 }
 
@@ -22,57 +28,20 @@ pub enum RegisterUserError {
 }
 
 #[derive(Debug)]
-pub struct UserPassword(String);
-
-impl Display for UserPassword {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
+pub struct HashedUserPassword(String);
 
 #[derive(Clone, Debug, Error)]
-#[error("user email cannot be empty")]
-pub struct UserPasswordEmptyError;
+#[error("failed to hash password")]
+pub struct PasswordHashingError;
 
-impl UserPassword {
-    pub fn new(raw: &str) -> Result<Self, UserPasswordEmptyError> {
-        let trimmed = raw.trim();
-        if trimmed.is_empty() {
-            Err(UserPasswordEmptyError)
-        } else {
-            Ok(Self(trimmed.to_string()))
-        }
+impl HashedUserPassword {
+    pub fn new(password: UserPassword) -> Result<HashedUserPassword, PasswordHashingError> {
+        let hashed_password =
+            password_hasher::hash_password(password.get()).map_err(|_| PasswordHashingError)?;
+        Ok(HashedUserPassword(hashed_password))
     }
 
     pub fn get(&self) -> &str {
         &self.0
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct UserEmail(String);
-
-#[derive(Clone, Debug, Error)]
-#[error("user email cannot be empty")]
-pub struct UserEmailEmptyError;
-
-impl UserEmail {
-    pub fn new(raw: &str) -> Result<Self, UserEmailEmptyError> {
-        let trimmed = raw.trim();
-        if trimmed.is_empty() {
-            Err(UserEmailEmptyError)
-        } else {
-            Ok(Self(trimmed.to_string()))
-        }
-    }
-
-    pub fn get(&self) -> &str {
-        &self.0
-    }
-}
-
-impl Display for UserEmail {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
     }
 }

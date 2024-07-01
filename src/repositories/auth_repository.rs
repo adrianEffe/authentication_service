@@ -1,7 +1,8 @@
-use crate::api::utils::password_hasher;
 use crate::domain::repositories::auth_repository::AuthRepository;
+use crate::model::login_user::{LoginUserError, LoginUserRequest};
 use crate::model::register_user::{RegisterUserError, RegisterUserRequest};
 use crate::model::user::{FilteredUser, User};
+use crate::model::user_email::UserEmail;
 use anyhow::{anyhow, Context};
 use sqlx::{postgres::PgPoolOptions, Postgres};
 
@@ -29,13 +30,11 @@ impl AuthRepository for PostgresDB {
     ) -> Result<FilteredUser, RegisterUserError> {
         self.is_unique_constrain_violation(request).await?;
 
-        let hashed_password = password_hasher::hash_password(request.password.get())?;
-
         let user = sqlx::query_as!(
             User,
             "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *",
             request.email.get().to_ascii_lowercase(),
-            hashed_password,
+            request.hashed_password.get(),
         )
         .fetch_one(&self.pool)
         .await
@@ -47,13 +46,17 @@ impl AuthRepository for PostgresDB {
         })?;
         Ok(FilteredUser::from(&user))
     }
+
+    async fn login(&self, request: &LoginUserRequest) -> Result<User, LoginUserError> {
+        self.fetch_user(&request.email).await
+    }
 }
 
 impl PostgresDB {
     async fn is_unique_constrain_violation(
         &self,
         request: &RegisterUserRequest,
-    ) -> anyhow::Result<(), RegisterUserError> {
+    ) -> Result<(), RegisterUserError> {
         let user_exists: Option<bool> =
             sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)")
                 .bind(request.email.to_string().to_ascii_lowercase())
@@ -72,5 +75,19 @@ impl PostgresDB {
             }
         }
         Ok(())
+    }
+
+    async fn fetch_user(&self, email: &UserEmail) -> Result<User, LoginUserError> {
+        sqlx::query_as!(
+            User,
+            "SELECT * FROM users WHERE email = $1",
+            email.to_string().to_ascii_lowercase()
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| {
+            anyhow!(e).context(format!("Database error while looking up email: {}", email))
+        })?
+        .ok_or_else(|| LoginUserError::InvalidCredentials)
     }
 }
