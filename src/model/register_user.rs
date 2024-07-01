@@ -1,4 +1,4 @@
-use crate::model::{user_email::UserEmail, user_password::UserPassword};
+use super::{user_email::UserEmail, user_password::UserPassword};
 use thiserror::Error;
 
 #[derive(Debug)]
