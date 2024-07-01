@@ -157,13 +157,10 @@ async fn test_login_revoked_token() {
 
     revoke_token_from_redis(&token).await;
 
-    let response: GenericResponse<UserData> = client
+    let response = client
         .get(&get_me_url)
         .header(AUTHORIZATION, format!("Bearer {}", token))
         .send()
-        .await
-        .unwrap()
-        .json()
         .await
         .unwrap();
 
@@ -174,7 +171,7 @@ async fn test_login_revoked_token() {
     })
     .await;
 
-    assert_eq!(response.status, Status::Failure);
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -235,17 +232,14 @@ async fn test_get_me_failure() {
 
     let token = "Bearer definetely invalid";
 
-    let response: GenericResponse<UserData> = client
+    let response = client
         .get(&get_me_url)
         .header(AUTHORIZATION, format!("Bearer {}", token))
         .send()
         .await
-        .expect("failed at send")
-        .json()
-        .await
-        .expect("failed at json");
+        .unwrap();
 
-    assert_eq!(response.status, Status::Failure);
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]

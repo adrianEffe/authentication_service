@@ -1,4 +1,5 @@
 use crate::domain::repositories::auth_repository::AuthRepository;
+use crate::model::auth::{AuthRequest, AuthorizationError, UserId};
 use crate::model::login_user::{LoginUserError, LoginUserRequest};
 use crate::model::register_user::{RegisterUserError, RegisterUserRequest};
 use crate::model::user::{FilteredUser, User};
@@ -48,7 +49,11 @@ impl AuthRepository for PostgresDB {
     }
 
     async fn login(&self, request: &LoginUserRequest) -> Result<User, LoginUserError> {
-        self.fetch_user(&request.email).await
+        self.fetch_user_by_email(&request.email).await
+    }
+
+    async fn auth(&self, request: &AuthRequest) -> Result<User, AuthorizationError> {
+        self.fetch_user_by_id(&request.user_id).await
     }
 }
 
@@ -77,11 +82,11 @@ impl PostgresDB {
         Ok(())
     }
 
-    async fn fetch_user(&self, email: &UserEmail) -> Result<User, LoginUserError> {
+    async fn fetch_user_by_email(&self, email: &UserEmail) -> Result<User, LoginUserError> {
         sqlx::query_as!(
             User,
             "SELECT * FROM users WHERE email = $1",
-            email.to_string().to_ascii_lowercase()
+            email.get().to_ascii_lowercase()
         )
         .fetch_optional(&self.pool)
         .await
@@ -89,5 +94,20 @@ impl PostgresDB {
             anyhow!(e).context(format!("Database error while looking up email: {}", email))
         })?
         .ok_or_else(|| LoginUserError::InvalidCredentials)
+    }
+
+    async fn fetch_user_by_id(&self, user_id: &UserId) -> Result<User, AuthorizationError> {
+        sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id.get())
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| {
+                anyhow!(e).context(format!(
+                    "Database error while looking up user id: {:?}",
+                    user_id
+                ))
+            })?
+            .ok_or_else(|| AuthorizationError::InvalidCredentials {
+                reason: "The user belonging to this token no longer exists".to_string(),
+            })
     }
 }
