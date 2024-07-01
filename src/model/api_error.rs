@@ -4,6 +4,8 @@ use crate::model::{
 };
 use axum::{http::StatusCode, response::IntoResponse};
 
+use super::register_user::PasswordHashingError;
+
 #[derive(Debug)]
 pub enum ApiError {
     InternalServerError(String),
@@ -42,6 +44,12 @@ impl From<UserEmailEmptyError> for ApiError {
 impl From<UserPasswordEmptyError> for ApiError {
     fn from(_: UserPasswordEmptyError) -> Self {
         Self::UnprocessableEntity("Password cannot be empty".to_string())
+    }
+}
+
+impl From<PasswordHashingError> for ApiError {
+    fn from(_: PasswordHashingError) -> Self {
+        Self::InternalServerError("Something went wrong".to_string())
     }
 }
 

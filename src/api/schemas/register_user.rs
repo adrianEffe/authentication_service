@@ -1,5 +1,7 @@
 use crate::model::{
-    api_error::ApiError, register_user::RegisterUserRequest, user_email::UserEmail,
+    api_error::ApiError,
+    register_user::{HashedUserPassword, RegisterUserRequest},
+    user_email::UserEmail,
     user_password::UserPassword,
 };
 use serde::Deserialize;
@@ -14,6 +16,7 @@ impl RegisterUserSchema {
     pub fn try_into_domain(self) -> Result<RegisterUserRequest, ApiError> {
         let email = UserEmail::new(&self.email)?;
         let password = UserPassword::new(&self.password)?;
-        Ok(RegisterUserRequest::new(email, password))
+        let hashed_password = HashedUserPassword::new(password)?;
+        Ok(RegisterUserRequest::new(email, hashed_password))
     }
 }

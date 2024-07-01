@@ -1,4 +1,4 @@
-use crate::api::utils::password_hasher;
+use crate::api::utils::password_hasher::{self, is_valid};
 use crate::domain::repositories::auth_repository::AuthRepository;
 use crate::model::login_response::LoginResponse;
 use crate::model::login_user::{LoginUserError, LoginUserRequest};
@@ -32,13 +32,11 @@ impl AuthRepository for PostgresDB {
     ) -> Result<FilteredUser, RegisterUserError> {
         self.is_unique_constrain_violation(request).await?;
 
-        let hashed_password = password_hasher::hash_password(request.password.get())?;
-
         let user = sqlx::query_as!(
             User,
             "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *",
             request.email.get().to_ascii_lowercase(),
-            hashed_password,
+            request.hashed_password.get(),
         )
         .fetch_one(&self.pool)
         .await
@@ -52,6 +50,11 @@ impl AuthRepository for PostgresDB {
     }
 
     async fn login(&self, request: &LoginUserRequest) -> Result<LoginResponse, LoginUserError> {
+        let user = self.fetch_user(&request.email).await?;
+        let is_valid = is_valid(&request.password.to_string(), &user.password);
+        if !is_valid {
+            return Err(LoginUserError::InvalidCredentials);
+        }
         todo!();
     }
 }
