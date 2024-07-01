@@ -1,6 +1,4 @@
-use crate::api::utils::password_hasher::{self, is_valid};
 use crate::domain::repositories::auth_repository::AuthRepository;
-use crate::model::login_response::LoginResponse;
 use crate::model::login_user::{LoginUserError, LoginUserRequest};
 use crate::model::register_user::{RegisterUserError, RegisterUserRequest};
 use crate::model::user::{FilteredUser, User};
@@ -49,13 +47,8 @@ impl AuthRepository for PostgresDB {
         Ok(FilteredUser::from(&user))
     }
 
-    async fn login(&self, request: &LoginUserRequest) -> Result<LoginResponse, LoginUserError> {
-        let user = self.fetch_user(&request.email).await?;
-        let is_valid = is_valid(&request.password.to_string(), &user.password);
-        if !is_valid {
-            return Err(LoginUserError::InvalidCredentials);
-        }
-        todo!();
+    async fn login(&self, request: &LoginUserRequest) -> Result<User, LoginUserError> {
+        self.fetch_user(&request.email).await
     }
 }
 

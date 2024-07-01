@@ -4,53 +4,58 @@ use crate::{
         utils::{
             jwt::generate_jwt,
             password_hasher::is_valid,
-            status::{response_data, response_message, Status},
+            status::{response_data, Status},
         },
     },
     application::AppState,
     domain::repositories::auth_repository::AuthRepository,
     helper::redis_helper,
-    model::{login_response::LoginResponse, token::TokenDetails, user::User},
+    model::{api_error::ApiError, login_response::LoginResponse, login_user::LoginUserError},
 };
+use anyhow::anyhow;
 use axum::{
     extract::State,
-    http::{header, HeaderMap, Response, StatusCode},
+    http::{header, HeaderMap, Response},
     response::IntoResponse,
     Json,
 };
 use axum_extra::extract::cookie::{Cookie, SameSite};
-use sqlx::{Pool, Postgres};
 use std::sync::Arc;
 
 pub async fn login_handler<AR: AuthRepository>(
     State(data): State<Arc<AppState<AR>>>,
     Json(body): Json<LoginUserSchema>,
-) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let user = fetch_user(&data.db, &body.email).await?;
+) -> Result<impl IntoResponse, ApiError> {
+    let domain_request = body.try_into_domain()?;
+    let user = data.auth_repository.login(&domain_request).await?;
 
     let is_valid = is_valid(&body.password, &user.password);
     if !is_valid {
-        let error_response = response_message(&Status::Failure, "Invalid email or password");
-        return Err((StatusCode::BAD_REQUEST, Json(error_response)));
+        return Err(ApiError::from(LoginUserError::InvalidCredentials));
     }
 
-    let access_token_details = generate_access_token(
+    let access_token_details = generate_jwt(
         user.id,
         data.env.access_token_max_age,
         &data.env.access_token_private_key,
-    )?;
+    )
+    .map_err(|e| {
+        ApiError::from(LoginUserError::Unknown(
+            anyhow!(e).context("Failed to generate jwt token"),
+        ))
+    })?;
 
+    // TODO: - abstract redis away
     redis_helper::save_token_data(&data, &access_token_details, data.env.access_token_max_age)
         .await
         .map_err(|e| {
-            let message = format!("Redis error: {}", e);
-            let error_response = response_message(&Status::Failure, &message);
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+            ApiError::from(LoginUserError::Unknown(
+                anyhow!(e).context("Failed to save token to redis"),
+            ))
         })?;
 
     let access_token = access_token_details.token.ok_or_else(|| {
-        let error_response = response_message(&Status::Failure, "Failed to generate token");
-        (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+        ApiError::from(LoginUserError::Unknown(anyhow!("Failed to generate token")))
     })?;
 
     let mut response = Response::new(
@@ -63,38 +68,25 @@ pub async fn login_handler<AR: AuthRepository>(
         .to_string(),
     );
 
-    let headers = set_cookies_in_header(&access_token, data.env.access_token_max_age)?;
+    let headers =
+        set_cookies_in_header(&access_token, data.env.access_token_max_age).map_err(|e| {
+            ApiError::from(LoginUserError::Unknown(
+                anyhow!(e).context("Failed to set cookies in header"),
+            ))
+        })?;
 
     response.headers_mut().extend(headers);
     Ok(response)
 }
 
-fn generate_access_token(
-    user_id: uuid::Uuid,
-    max_age: i64,
-    private_key: &str,
-) -> Result<TokenDetails, (StatusCode, Json<serde_json::Value>)> {
-    generate_jwt(user_id, max_age, private_key).map_err(|_| {
-        let error_message = response_message(&Status::Failure, "Failed to generate jwt detail");
-        (StatusCode::INTERNAL_SERVER_ERROR, Json(error_message))
-    })
-}
-
-fn set_cookies_in_header(
-    access_token: &str,
-    max_age: i64,
-) -> Result<HeaderMap, (StatusCode, Json<serde_json::Value>)> {
+fn set_cookies_in_header(access_token: &str, max_age: i64) -> anyhow::Result<HeaderMap> {
     let access_cookie = Cookie::build(("access_token", access_token))
         .path("/")
         .max_age(time::Duration::minutes(max_age))
         .same_site(SameSite::Lax)
         .http_only(true)
         .to_string()
-        .parse()
-        .map_err(|_| {
-            let error_message = response_message(&Status::Failure, "Failed to parse access cookie");
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_message))
-        })?;
+        .parse()?;
 
     let logged_in_cookie = Cookie::build(("logged_in", "true"))
         .path("/")
@@ -102,37 +94,10 @@ fn set_cookies_in_header(
         .same_site(SameSite::Lax)
         .http_only(false)
         .to_string()
-        .parse()
-        .map_err(|_| {
-            let error_message =
-                response_message(&Status::Failure, "Failed to parse logged in cookie");
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_message))
-        })?;
+        .parse()?;
 
     let mut headers = HeaderMap::new();
     headers.append(header::SET_COOKIE, access_cookie);
     headers.append(header::SET_COOKIE, logged_in_cookie);
     Ok(headers)
-}
-
-async fn fetch_user(
-    db: &Pool<Postgres>,
-    email: &str,
-) -> Result<User, (StatusCode, Json<serde_json::Value>)> {
-    sqlx::query_as!(
-        User,
-        "SELECT * FROM users WHERE email = $1",
-        email.to_ascii_lowercase()
-    )
-    .fetch_optional(db)
-    .await
-    .map_err(|e| {
-        let message = format!("Database error: {}", e);
-        let error_message = response_message(&Status::Failure, &message);
-        (StatusCode::INTERNAL_SERVER_ERROR, Json(error_message))
-    })?
-    .ok_or_else(|| {
-        let error_message = response_message(&Status::Failure, "Invalid email or password");
-        (StatusCode::BAD_REQUEST, Json(error_message))
-    })
 }
