@@ -196,22 +196,22 @@ async fn test_get_me_success() {
         .json(&body)
         .send()
         .await
-        .expect("failed at send")
+        .unwrap()
         .json()
         .await
-        .expect("failed at json");
+        .unwrap();
 
     let token = response.data.unwrap().access_token;
 
-    let response: GenericResponse<UserData> = client
+    let response: GenericResponse<FilteredUser> = client
         .get(&get_me_url)
         .header(AUTHORIZATION, format!("Bearer {}", token))
         .send()
         .await
-        .expect("failed at send")
+        .unwrap()
         .json()
         .await
-        .expect("failed at json");
+        .unwrap();
 
     clean_up_db(|db| async move {
         db.execute(sqlx::query!("DELETE FROM users WHERE email = $1", email))
@@ -220,7 +220,7 @@ async fn test_get_me_success() {
     })
     .await;
 
-    assert_eq!(response.data.unwrap().user.email, email);
+    assert_eq!(response.data.unwrap().email, email);
 }
 
 #[tokio::test]
