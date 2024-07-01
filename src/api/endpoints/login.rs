@@ -1,11 +1,7 @@
 use crate::{
     api::{
         schemas::login_user::LoginUserSchema,
-        utils::{
-            jwt::generate_jwt,
-            password_hasher::is_valid,
-            status::{response_data, Status},
-        },
+        utils::{jwt::generate_jwt, password_hasher::is_valid},
     },
     application::AppState,
     domain::repositories::auth_repository::AuthRepository,
