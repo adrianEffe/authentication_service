@@ -1,3 +1,5 @@
+use std::fmt::{Debug, Display};
+
 use crate::api::utils::status::Status;
 use axum::{
     http::StatusCode,
@@ -13,13 +15,17 @@ pub struct ApiResponse<T> {
     message: Option<String>,
 }
 
-impl<T> ApiResponse<T> {
+impl<T: Serialize> ApiResponse<T> {
     pub fn success(data: T) -> Self {
         ApiResponse {
             status: Status::Success,
             data: Some(data),
             message: None,
         }
+    }
+
+    pub fn to_json(self) -> serde_json::Value {
+        serde_json::json!(self)
     }
 }
 

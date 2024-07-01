@@ -1,16 +1,15 @@
 use crate::{
     api::{
         schemas::login_user::LoginUserSchema,
-        utils::{
-            jwt::generate_jwt,
-            password_hasher::is_valid,
-            status::{response_data, Status},
-        },
+        utils::{jwt::generate_jwt, password_hasher::is_valid},
     },
     application::AppState,
     domain::repositories::auth_repository::AuthRepository,
     helper::redis_helper,
-    model::{api_error::ApiError, login_response::LoginResponse, login_user::LoginUserError},
+    model::{
+        api_error::ApiError, api_response::ApiResponse, login_response::LoginResponse,
+        login_user::LoginUserError,
+    },
 };
 use anyhow::anyhow;
 use axum::{
@@ -23,11 +22,11 @@ use axum_extra::extract::cookie::{Cookie, SameSite};
 use std::sync::Arc;
 
 pub async fn login_handler<AR: AuthRepository>(
-    State(data): State<Arc<AppState<AR>>>,
+    State(state): State<Arc<AppState<AR>>>,
     Json(body): Json<LoginUserSchema>,
 ) -> Result<impl IntoResponse, ApiError> {
     let domain_request = body.try_into_domain()?;
-    let user = data.auth_repository.login(&domain_request).await?;
+    let user = state.auth_repository.login(&domain_request).await?;
 
     let is_valid = is_valid(&body.password, &user.password);
     if !is_valid {
@@ -36,8 +35,8 @@ pub async fn login_handler<AR: AuthRepository>(
 
     let access_token_details = generate_jwt(
         user.id,
-        data.env.access_token_max_age,
-        &data.env.access_token_private_key,
+        state.env.access_token_max_age,
+        &state.env.access_token_private_key,
     )
     .map_err(|e| {
         ApiError::from(LoginUserError::Unknown(
@@ -46,30 +45,32 @@ pub async fn login_handler<AR: AuthRepository>(
     })?;
 
     // TODO: - abstract redis away
-    redis_helper::save_token_data(&data, &access_token_details, data.env.access_token_max_age)
-        .await
-        .map_err(|e| {
-            ApiError::from(LoginUserError::Unknown(
-                anyhow!(e).context("Failed to save token to redis"),
-            ))
-        })?;
+    redis_helper::save_token_data(
+        &state,
+        &access_token_details,
+        state.env.access_token_max_age,
+    )
+    .await
+    .map_err(|e| {
+        ApiError::from(LoginUserError::Unknown(
+            anyhow!(e).context("Failed to save token to redis"),
+        ))
+    })?;
 
     let access_token = access_token_details.token.ok_or_else(|| {
         ApiError::from(LoginUserError::Unknown(anyhow!("Failed to generate token")))
     })?;
 
     let mut response = Response::new(
-        response_data(
-            &Status::Success,
-            LoginResponse {
-                access_token: access_token.to_owned(),
-            },
-        )
+        ApiResponse::success(LoginResponse {
+            access_token: access_token.to_owned(),
+        })
+        .to_json()
         .to_string(),
     );
 
     let headers =
-        set_cookies_in_header(&access_token, data.env.access_token_max_age).map_err(|e| {
+        set_cookies_in_header(&access_token, state.env.access_token_max_age).map_err(|e| {
             ApiError::from(LoginUserError::Unknown(
                 anyhow!(e).context("Failed to set cookies in header"),
             ))
