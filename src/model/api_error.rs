@@ -4,7 +4,9 @@ use crate::model::{
 };
 use axum::{http::StatusCode, response::IntoResponse};
 
-use super::{login_user::LoginUserError, register_user::PasswordHashingError};
+use super::{
+    auth::AuthorizationError, login_user::LoginUserError, register_user::PasswordHashingError,
+};
 
 #[derive(Debug)]
 pub enum ApiError {
@@ -30,6 +32,20 @@ impl From<RegisterUserError> for ApiError {
                 Self::UnprocessableEntity(format!("User with email {} already exists", email))
             }
             RegisterUserError::Unknown(cause) => {
+                tracing::error!("{:?}\n{}", cause, cause.backtrace());
+                Self::InternalServerError("Internal server error".to_string())
+            }
+        }
+    }
+}
+
+impl From<AuthorizationError> for ApiError {
+    fn from(value: AuthorizationError) -> Self {
+        match &value {
+            AuthorizationError::InvalidCredentials { reason } => {
+                Self::Unauthorized(reason.to_string())
+            }
+            AuthorizationError::Unknown(cause) => {
                 tracing::error!("{:?}\n{}", cause, cause.backtrace());
                 Self::InternalServerError("Internal server error".to_string())
             }

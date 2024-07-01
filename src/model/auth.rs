@@ -28,8 +28,8 @@ impl UserId {
 
 #[derive(Debug, Error)]
 pub enum AuthorizationError {
-    #[error("The user belonging to this token no longer exists")]
-    InvalidCredentials,
+    #[error("Authorization error: {reason}")]
+    InvalidCredentials { reason: String },
     #[error(transparent)]
     Unknown(#[from] anyhow::Error),
 }

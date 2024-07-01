@@ -106,6 +106,8 @@ impl PostgresDB {
                     user_id
                 ))
             })?
-            .ok_or_else(|| AuthorizationError::InvalidCredentials)
+            .ok_or_else(|| AuthorizationError::InvalidCredentials {
+                reason: "The user belonging to this token no longer exists".to_string(),
+            })
     }
 }

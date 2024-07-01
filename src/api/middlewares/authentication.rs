@@ -1,28 +1,24 @@
 use crate::{
-    api::utils::{
-        jwt::verify_jwt,
-        status::{response_message, Status},
-    },
+    api::utils::jwt::verify_jwt,
     application::AppState,
     domain::repositories::auth_repository::AuthRepository,
     model::{
-        auth::{AuthRequest, UserId},
+        api_error::ApiError,
+        auth::{AuthRequest, AuthorizationError},
         auth_middleware::AuthMiddleware,
         token::TokenDetails,
-        user::User,
     },
 };
+use anyhow::anyhow;
 use axum::{
     body::Body,
     extract::State,
-    http::{header, Request, StatusCode},
+    http::{header, Request},
     middleware::Next,
     response::IntoResponse,
-    Json,
 };
 use axum_extra::extract::CookieJar;
 use redis::{AsyncCommands, Client};
-use sqlx::{Pool, Postgres};
 use std::sync::Arc;
 
 pub async fn auth<AR: AuthRepository>(
@@ -30,21 +26,20 @@ pub async fn auth<AR: AuthRepository>(
     State(state): State<Arc<AppState<AR>>>,
     mut req: Request<Body>,
     next: Next,
-) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let access_token = extract_access_token(cookie_jar, &req)?;
+) -> Result<impl IntoResponse, ApiError> {
+    let access_token = extract_access_token(cookie_jar, &req).map_err(ApiError::from)?;
 
-    let access_token_details = match verify_jwt(&state.env.access_token_public_key, &access_token) {
-        Ok(token_details) => token_details,
-        Err(e) => {
-            let error_response = response_message(&Status::Failure, &e.to_string());
-            return Err((StatusCode::UNAUTHORIZED, Json(error_response)));
-        }
-    };
+    let access_token_details = verify_jwt(&state.env.access_token_public_key, &access_token)
+        .map_err(|_| {
+            ApiError::from(AuthorizationError::InvalidCredentials {
+                reason: "Failed to verify token integrity".to_string(),
+            })
+        })?;
 
     verify_active_session(&state.redis, &access_token_details).await?;
 
     let request = AuthRequest::new(access_token_details.user_id);
-    let user = state.auth_repository.auth(&request).await.unwrap(); // FIX UNWRAP
+    let user = state.auth_repository.auth(&request).await?;
 
     req.extensions_mut().insert(AuthMiddleware {
         user,
@@ -56,59 +51,30 @@ pub async fn auth<AR: AuthRepository>(
 async fn verify_active_session(
     redis: &Client,
     access_token_details: &TokenDetails,
-) -> Result<(), (StatusCode, Json<serde_json::Value>)> {
+) -> Result<(), AuthorizationError> {
     let access_token_uuid = uuid::Uuid::parse_str(&access_token_details.token_uuid.to_string())
-        .map_err(|_| {
-            let error_response = response_message(&Status::Failure, "Invalid token");
-            (StatusCode::UNAUTHORIZED, Json(error_response))
+        .map_err(|_| AuthorizationError::InvalidCredentials {
+            reason: "Invalid token".to_string(),
         })?;
 
     let mut redis_client = redis
         .get_multiplexed_async_connection()
         .await
-        .map_err(|e| {
-            let message = format!("Redis error: {}", e);
-            let error_response = response_message(&Status::Failure, &message);
-            (StatusCode::UNAUTHORIZED, Json(error_response))
-        })?;
+        .map_err(|e| anyhow!(e).context("Redis error"))?;
 
     redis_client
         .get::<_, String>(access_token_uuid.to_string())
         .await
-        .map_err(|_| {
-            let error_response =
-                response_message(&Status::Failure, "Token is invalid or session has expired");
-            (StatusCode::UNAUTHORIZED, Json(error_response))
+        .map_err(|_| AuthorizationError::InvalidCredentials {
+            reason: "Token is invalid or session has expired".to_string(),
         })?;
     Ok(())
-}
-
-async fn fetch_user_from_db(
-    db: &Pool<Postgres>,
-    user_id: uuid::Uuid,
-) -> Result<User, (StatusCode, Json<serde_json::Value>)> {
-    let user = sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id)
-        .fetch_optional(db)
-        .await
-        .map_err(|e| {
-            let message = format!("Error fetching from database: {}", e);
-            let error_response = response_message(&Status::Failure, &message);
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
-        })?;
-
-    user.ok_or_else(|| {
-        let error_response = response_message(
-            &Status::Failure,
-            "The user belonging to this token no longer exists",
-        );
-        (StatusCode::UNAUTHORIZED, Json(error_response))
-    })
 }
 
 fn extract_access_token(
     cookie_jar: CookieJar,
     req: &Request<Body>,
-) -> Result<String, (StatusCode, Json<serde_json::Value>)> {
+) -> Result<String, AuthorizationError> {
     let access_token = cookie_jar
         .get("access_token")
         .map(|cookie| cookie.value().to_string())
@@ -123,8 +89,7 @@ fn extract_access_token(
                 })
         });
 
-    access_token.ok_or_else(|| {
-        let error_response = response_message(&Status::Failure, "You are not logged in");
-        (StatusCode::UNAUTHORIZED, Json(error_response))
+    access_token.ok_or_else(|| AuthorizationError::InvalidCredentials {
+        reason: "You are not logged in".to_string(),
     })
 }
