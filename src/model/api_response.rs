@@ -1,5 +1,4 @@
 use crate::api::utils::status::Status;
-use crate::model::api_error::ApiError;
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
@@ -20,14 +19,6 @@ impl<T> ApiResponse<T> {
             status: Status::Success,
             data: Some(data),
             message: None,
-        }
-    }
-
-    pub fn error(error: ApiError) -> Self {
-        ApiResponse {
-            status: Status::Failure,
-            data: None,
-            message: Some(error.to_string()),
         }
     }
 }
