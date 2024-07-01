@@ -115,23 +115,15 @@ async fn test_login_failure() {
     let login_url = format!("http://{}/api/login", address);
     let client = reqwest::Client::new();
 
-    let email = "login_success@test.com";
+    let email = "login_failure@test.com";
     let body = serde_json::json!({
         "email": email,
         "password": "12345678"
     });
 
-    let response: GenericResponse<AccessTokenData> = client
-        .post(&login_url)
-        .json(&body)
-        .send()
-        .await
-        .expect("failed at send")
-        .json()
-        .await
-        .expect("failed at json");
+    let response = client.post(&login_url).json(&body).send().await.unwrap();
 
-    assert_eq!(response.status, Status::Failure);
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
