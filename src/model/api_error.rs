@@ -1,4 +1,7 @@
-use crate::model::register_user::{RegisterUserError, UserEmailEmptyError, UserPasswordEmptyError};
+use crate::model::{
+    register_user::RegisterUserError, user_email::UserEmailEmptyError,
+    user_password::UserPasswordEmptyError,
+};
 use axum::{http::StatusCode, response::IntoResponse};
 
 #[derive(Debug)]

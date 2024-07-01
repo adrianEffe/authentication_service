@@ -7,4 +7,9 @@ pub trait AuthRepository: Send + Sync + 'static {
         &self,
         request: &RegisterUserRequest,
     ) -> impl Future<Output = Result<FilteredUser, RegisterUserError>> + Send;
+
+    // fn login(
+    //     &self,
+    //     request:
+    // )
 }

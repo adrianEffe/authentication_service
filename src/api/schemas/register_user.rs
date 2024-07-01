@@ -1,6 +1,6 @@
 use crate::model::{
-    api_error::ApiError,
-    register_user::{RegisterUserRequest, UserEmail, UserPassword},
+    api_error::ApiError, register_user::RegisterUserRequest, user_email::UserEmail,
+    user_password::UserPassword,
 };
 use serde::Deserialize;
 
