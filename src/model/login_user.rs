@@ -2,7 +2,7 @@ use super::{user_email::UserEmail, user_password::UserPassword};
 use thiserror::Error;
 
 #[derive(Debug)]
-struct LoginUserRequest {
+pub struct LoginUserRequest {
     pub email: UserEmail,
     pub password: UserPassword,
 }
