@@ -12,7 +12,7 @@ use serde::Serialize;
 pub struct ApiResponse<T> {
     status: Status,
     data: Option<T>,
-    message: Option<String>,
+    message: Option<T>,
 }
 
 impl<T: Serialize> ApiResponse<T> {
@@ -24,7 +24,7 @@ impl<T: Serialize> ApiResponse<T> {
         }
     }
 
-    pub fn success_message(message: String) -> Self {
+    pub fn success_message(message: T) -> Self {
         ApiResponse {
             status: Status::Success,
             data: None,

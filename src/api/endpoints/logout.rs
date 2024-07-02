@@ -13,24 +13,28 @@ use crate::{
     application::AppState,
     domain::{auth_service::AuthService, repositories::auth_repository::AuthRepository},
     helper::redis_helper,
-    model::auth_middleware::AuthMiddleware,
+    model::{api_error::ApiError, api_response::ApiResponse, auth_middleware::AuthMiddleware},
 };
 
 pub async fn logout_handler<AR: AuthRepository, AS: AuthService>(
     Extension(auth_guard): Extension<AuthMiddleware>,
     State(data): State<Arc<AppState<AR, AS>>>,
-) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+) -> Result<impl IntoResponse, ApiError> {
     redis_helper::delete_token_data(&data.redis, &auth_guard.access_token_uuid.to_string())
         .await
         .map_err(|_| {
             let error_message = response_message(&Status::Failure, "Redis failed to delete token");
             (StatusCode::INTERNAL_SERVER_ERROR, Json(error_message))
-        })?;
+        })
+        .unwrap();
 
-    let headers = set_cookies_in_header()?;
+    let headers = set_cookies_in_header().unwrap();
 
-    let mut response =
-        Response::new(response_message(&Status::Success, "User logged out").to_string());
+    let mut response = Response::new(
+        ApiResponse::<String>::success_message("User logged out".to_string())
+            .to_json()
+            .to_string(),
+    );
     response.headers_mut().extend(headers);
     Ok(response)
 }
