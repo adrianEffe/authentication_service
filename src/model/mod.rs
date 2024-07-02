@@ -2,6 +2,7 @@ pub mod api_error;
 pub mod api_response;
 pub mod auth;
 pub mod auth_middleware;
+pub mod cache_errors;
 pub mod login_response;
 pub mod login_user;
 pub mod register_user;
