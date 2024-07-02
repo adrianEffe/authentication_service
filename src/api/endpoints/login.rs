@@ -25,13 +25,15 @@ pub async fn login_handler<AR: AuthRepository, AS: AuthService>(
         .await
         .map_err(ApiError::from)?;
 
-    let headers =
-        set_cookies_in_header(&login_response.access_token, state.env.access_token_max_age)
-            .map_err(|e| {
-                ApiError::from(LoginUserError::Unknown(
-                    anyhow!(e).context("Failed to set cookies in header"),
-                ))
-            })?;
+    let headers = set_cookies_in_header(
+        &login_response.access_token,
+        login_response.access_token_max_age,
+    )
+    .map_err(|e| {
+        ApiError::from(LoginUserError::Unknown(
+            anyhow!(e).context("Failed to set cookies in header"),
+        ))
+    })?;
 
     let mut response = Response::new(ApiResponse::success(login_response).to_json().to_string());
     response.headers_mut().extend(headers);

@@ -27,7 +27,6 @@ use tracing::Level;
 pub struct AppState<AR: AuthRepository, AS: AuthService> {
     pub auth_service: AS,
     pub auth_repository: AR,
-    pub env: Config,
     pub redis: Client,
 }
 
@@ -49,13 +48,12 @@ pub async fn run(listener: TcpListener, config: Config) {
     let service = Service {
         repo: postgres.clone(), // TODO: remove clone
         cache: redis,
-        config: config.clone(), //TODO: remove clone
+        config,
     };
 
     let app_state = Arc::new(AppState {
         auth_service: service,
         auth_repository: postgres,
-        env: config,
         redis: redis_client,
     });
 
