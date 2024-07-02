@@ -1,7 +1,7 @@
 use crate::{
     api::utils::jwt::verify_jwt,
     application::AppState,
-    domain::repositories::auth_repository::AuthRepository,
+    domain::{auth_service::AuthService, repositories::auth_repository::AuthRepository},
     model::{
         api_error::ApiError,
         auth::{AuthRequest, AuthorizationError},
@@ -21,9 +21,9 @@ use axum_extra::extract::CookieJar;
 use redis::{AsyncCommands, Client};
 use std::sync::Arc;
 
-pub async fn auth<AR: AuthRepository>(
+pub async fn auth<AR: AuthRepository, AS: AuthService>(
     cookie_jar: CookieJar,
-    State(state): State<Arc<AppState<AR>>>,
+    State(state): State<Arc<AppState<AR, AS>>>,
     mut req: Request<Body>,
     next: Next,
 ) -> Result<impl IntoResponse, ApiError> {

@@ -1,6 +1,8 @@
 use crate::domain::auth_service::AuthService;
 use crate::domain::repositories::auth_repository::AuthRepository;
 use crate::repositories::auth_repository::PostgresDB;
+use crate::repositories::cache_repository::RedisCache;
+use crate::service::Service;
 use crate::{
     api::{
         endpoints::{
@@ -41,20 +43,26 @@ pub async fn run(listener: TcpListener, config: Config) {
         }
     };
 
-    let postgres = PostgresDB::new(&config.database_url).await.unwrap();
+    let postgres = PostgresDB::new(&config.database_url).await.unwrap(); //TODO: handle unwrap
+    let redis = RedisCache;
+
+    let service = Service {
+        repo: postgres.clone(), // TODO: remove clone
+        cache: redis,
+    };
 
     let app_state = Arc::new(AppState {
+        auth_service: service,
         auth_repository: postgres,
-        // db: pool,
         env: config,
         redis: redis_client,
     });
 
     let app = app(app_state);
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app).await.unwrap(); //TODO: handle unwrap
 }
 
-fn app<AR: AuthRepository>(app_state: Arc<AppState<AR>>) -> Router {
+fn app<AR: AuthRepository, AS: AuthService>(app_state: Arc<AppState<AR, AS>>) -> Router {
     Router::new()
         .route("/api/healthcheck", get(healthcheck))
         .route("/api/register", post(register_handler))

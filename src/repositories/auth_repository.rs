@@ -7,7 +7,7 @@ use crate::model::user_email::UserEmail;
 use anyhow::{anyhow, Context};
 use sqlx::{postgres::PgPoolOptions, Postgres};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PostgresDB {
     pool: sqlx::Pool<Postgres>,
 }

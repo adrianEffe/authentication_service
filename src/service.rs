@@ -17,8 +17,8 @@ where
     R: AuthRepository,
     C: CacheRepository,
 {
-    repo: R,
-    cahce: C,
+    pub repo: R,
+    pub cache: C,
 }
 
 impl<R, C> AuthService for Service<R, C>
