@@ -87,6 +87,7 @@ impl CacheRepository for RedisCache {
             .del(token_uuid.get_string())
             .await
             .map_err(|e| anyhow!(e).context("Failed to delete token from redis"))?;
-        todo!()
+
+        Ok(())
     }
 }
