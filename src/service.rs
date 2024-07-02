@@ -1,7 +1,10 @@
 use anyhow::anyhow;
 
 use crate::{
-    api::utils::{jwt::generate_jwt, password_hasher::is_valid},
+    api::utils::{
+        jwt::{generate_jwt, verify_jwt},
+        password_hasher::is_valid,
+    },
     domain::{
         auth_service::AuthService,
         repositories::{auth_repository::AuthRepository, cache_repository::CacheRepository},
@@ -9,10 +12,12 @@ use crate::{
     helper::config::Config,
     model::{
         auth::{AuthRequest, AuthorizationError},
+        auth_middleware::AuthMiddleware,
         login_response::LoginResponse,
         login_user::{LoginUserError, LoginUserRequest},
         register_user::{RegisterUserError, RegisterUserRequest},
-        user::{FilteredUser, User},
+        user::FilteredUser,
+        user_id::UserId,
     },
 };
 
@@ -65,7 +70,25 @@ where
         Ok(LoginResponse { access_token })
     }
 
-    async fn auth(&self, request: &AuthRequest) -> Result<User, AuthorizationError> {
-        todo!();
+    async fn auth(&self, request: &AuthRequest) -> Result<AuthMiddleware, AuthorizationError> {
+        let access_token_details = verify_jwt(
+            &self.config.access_token_public_key,
+            request.access_token.get(),
+        )
+        .map_err(|_| AuthorizationError::InvalidCredentials {
+            reason: "Access token no longer valid".to_string(),
+        })?;
+
+        self.cache
+            .verify_active_session(&access_token_details)
+            .await
+            .map_err(AuthorizationError::from)?;
+
+        let user = self
+            .repo
+            .auth(&UserId::new(access_token_details.user_id))
+            .await?;
+
+        Ok(AuthMiddleware::new(user, access_token_details.token_uuid))
     }
 }

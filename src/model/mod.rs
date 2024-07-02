@@ -9,4 +9,5 @@ pub mod register_user;
 pub mod token;
 pub mod user;
 pub mod user_email;
+pub mod user_id;
 pub mod user_password;

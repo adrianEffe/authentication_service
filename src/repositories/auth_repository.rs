@@ -1,9 +1,10 @@
 use crate::domain::repositories::auth_repository::AuthRepository;
-use crate::model::auth::{AuthRequest, AuthorizationError, UserId};
+use crate::model::auth::AuthorizationError;
 use crate::model::login_user::{LoginUserError, LoginUserRequest};
 use crate::model::register_user::{RegisterUserError, RegisterUserRequest};
 use crate::model::user::{FilteredUser, User};
 use crate::model::user_email::UserEmail;
+use crate::model::user_id::UserId;
 use anyhow::{anyhow, Context};
 use sqlx::{postgres::PgPoolOptions, Postgres};
 
@@ -52,8 +53,8 @@ impl AuthRepository for PostgresDB {
         self.fetch_user_by_email(&request.email).await
     }
 
-    async fn auth(&self, request: &AuthRequest) -> Result<User, AuthorizationError> {
-        self.fetch_user_by_id(&request.user_id).await
+    async fn auth(&self, request: &UserId) -> Result<User, AuthorizationError> {
+        self.fetch_user_by_id(request).await
     }
 }
 

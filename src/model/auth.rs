@@ -1,27 +1,26 @@
+use anyhow::anyhow;
 use thiserror::Error;
+
+use super::cache_errors::CacheOperationError;
 
 #[derive(Debug)]
 pub struct AuthRequest {
-    pub user_id: UserId,
+    pub access_token: AccessToken,
 }
 
 impl AuthRequest {
-    pub fn new(user_id: uuid::Uuid) -> AuthRequest {
+    pub fn new(access_token: String) -> AuthRequest {
         AuthRequest {
-            user_id: UserId::new(user_id),
+            access_token: AccessToken(access_token),
         }
     }
 }
 
 #[derive(Debug)]
-pub struct UserId(uuid::Uuid);
+pub struct AccessToken(String);
 
-impl UserId {
-    pub fn new(id: uuid::Uuid) -> UserId {
-        UserId(id)
-    }
-
-    pub fn get(&self) -> &uuid::Uuid {
+impl AccessToken {
+    pub fn get(&self) -> &str {
         &self.0
     }
 }
@@ -32,4 +31,15 @@ pub enum AuthorizationError {
     InvalidCredentials { reason: String },
     #[error(transparent)]
     Unknown(#[from] anyhow::Error),
+}
+
+impl From<CacheOperationError> for AuthorizationError {
+    fn from(value: CacheOperationError) -> Self {
+        match value {
+            CacheOperationError::Invalid { reason } => {
+                AuthorizationError::InvalidCredentials { reason }
+            }
+            _ => AuthorizationError::Unknown(anyhow!("Internal server error")),
+        }
+    }
 }

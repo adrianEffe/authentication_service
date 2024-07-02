@@ -50,4 +50,28 @@ impl CacheRepository for RedisCache {
 
         Ok(())
     }
+
+    async fn verify_active_session(
+        &self,
+        token_details: &TokenDetails,
+    ) -> Result<(), CacheOperationError> {
+        let access_token_uuid = uuid::Uuid::parse_str(&token_details.token_uuid.to_string())
+            .map_err(|e| CacheOperationError::Invalid {
+                reason: format!("Failed to parse token with error: {}", e),
+            })?;
+
+        let mut redis_client = self
+            .client
+            .get_multiplexed_async_connection()
+            .await
+            .map_err(|e| anyhow!(e).context("Failed to get redis connection"))?;
+
+        redis_client
+            .get::<_, String>(access_token_uuid.to_string())
+            .await
+            .map_err(|_| CacheOperationError::Invalid {
+                reason: "Token is invalid or session has expired".to_string(),
+            })?;
+        Ok(())
+    }
 }

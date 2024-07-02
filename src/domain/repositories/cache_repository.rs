@@ -9,4 +9,9 @@ pub trait CacheRepository: Send + Sync + 'static {
         token_details: &TokenDetails,
         max_age: i64,
     ) -> impl Future<Output = Result<(), CacheOperationError>> + Send;
+
+    fn verify_active_session(
+        &self,
+        token_details: &TokenDetails,
+    ) -> impl Future<Output = Result<(), CacheOperationError>> + Send;
 }
