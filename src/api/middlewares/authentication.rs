@@ -1,6 +1,6 @@
 use crate::{
     application::AppState,
-    domain::{auth_service::AuthService, repositories::auth_repository::AuthRepository},
+    domain::auth_service::AuthService,
     model::{
         api_error::ApiError,
         auth::{AuthRequest, AuthorizationError},
@@ -16,9 +16,9 @@ use axum::{
 use axum_extra::extract::CookieJar;
 use std::sync::Arc;
 
-pub async fn auth<AR: AuthRepository, AS: AuthService>(
+pub async fn auth<AS: AuthService>(
     cookie_jar: CookieJar,
-    State(state): State<Arc<AppState<AR, AS>>>,
+    State(state): State<Arc<AppState<AS>>>,
     mut req: Request<Body>,
     next: Next,
 ) -> Result<impl IntoResponse, ApiError> {

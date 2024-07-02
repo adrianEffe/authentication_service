@@ -1,7 +1,7 @@
 use crate::{
     api::schemas::login_user::LoginUserSchema,
     application::AppState,
-    domain::{auth_service::AuthService, repositories::auth_repository::AuthRepository},
+    domain::auth_service::AuthService,
     model::{api_error::ApiError, api_response::ApiResponse, login_user::LoginUserError},
 };
 use anyhow::anyhow;
@@ -14,8 +14,8 @@ use axum::{
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use std::sync::Arc;
 
-pub async fn login_handler<AR: AuthRepository, AS: AuthService>(
-    State(state): State<Arc<AppState<AR, AS>>>,
+pub async fn login_handler<AS: AuthService>(
+    State(state): State<Arc<AppState<AS>>>,
     Json(body): Json<LoginUserSchema>,
 ) -> Result<impl IntoResponse, ApiError> {
     let domain_request = body.try_into_domain()?;

@@ -1,5 +1,4 @@
 use crate::domain::auth_service::AuthService;
-use crate::domain::repositories::auth_repository::AuthRepository;
 use crate::repositories::auth_repository::PostgresDB;
 use crate::repositories::cache_repository::RedisCache;
 use crate::service::Service;
@@ -24,9 +23,8 @@ use tokio::net::TcpListener;
 use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
 
-pub struct AppState<AR: AuthRepository, AS: AuthService> {
+pub struct AppState<AS: AuthService> {
     pub auth_service: AS,
-    pub auth_repository: AR,
     pub redis: Client,
 }
 
@@ -46,14 +44,13 @@ pub async fn run(listener: TcpListener, config: Config) {
     let redis = RedisCache::new(&config.redis_url);
 
     let service = Service {
-        repo: postgres.clone(), // TODO: remove clone
+        repo: postgres,
         cache: redis,
         config,
     };
 
     let app_state = Arc::new(AppState {
         auth_service: service,
-        auth_repository: postgres,
         redis: redis_client,
     });
 
@@ -61,7 +58,7 @@ pub async fn run(listener: TcpListener, config: Config) {
     axum::serve(listener, app).await.unwrap(); //TODO: handle unwrap
 }
 
-fn app<AR: AuthRepository, AS: AuthService>(app_state: Arc<AppState<AR, AS>>) -> Router {
+fn app<AS: AuthService>(app_state: Arc<AppState<AS>>) -> Router {
     Router::new()
         .route("/api/healthcheck", get(healthcheck))
         .route("/api/register", post(register_handler))
