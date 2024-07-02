@@ -1,5 +1,6 @@
 use crate::{
-    application::AppState, domain::repositories::auth_repository::AuthRepository,
+    application::AppState,
+    domain::{auth_service::AuthService, repositories::auth_repository::AuthRepository},
     model::token::TokenDetails,
 };
 
@@ -7,8 +8,8 @@ use anyhow::Result;
 use redis::{AsyncCommands, Client};
 use std::sync::Arc;
 
-pub async fn save_token_data<AR: AuthRepository>(
-    data: &Arc<AppState<AR>>,
+pub async fn save_token_data<AR: AuthRepository, AS: AuthService>(
+    data: &Arc<AppState<AR, AS>>,
     token_details: &TokenDetails,
     max_age: i64,
 ) -> Result<()> {

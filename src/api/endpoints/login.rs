@@ -4,7 +4,7 @@ use crate::{
         utils::{jwt::generate_jwt, password_hasher::is_valid},
     },
     application::AppState,
-    domain::repositories::auth_repository::AuthRepository,
+    domain::{auth_service::AuthService, repositories::auth_repository::AuthRepository},
     helper::redis_helper,
     model::{
         api_error::ApiError, api_response::ApiResponse, login_response::LoginResponse,
@@ -21,8 +21,8 @@ use axum::{
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use std::sync::Arc;
 
-pub async fn login_handler<AR: AuthRepository>(
-    State(state): State<Arc<AppState<AR>>>,
+pub async fn login_handler<AR: AuthRepository, AS: AuthService>(
+    State(state): State<Arc<AppState<AR, AS>>>,
     Json(body): Json<LoginUserSchema>,
 ) -> Result<impl IntoResponse, ApiError> {
     let domain_request = body.try_into_domain()?;
