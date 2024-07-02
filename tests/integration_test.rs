@@ -1,14 +1,11 @@
 use authentication_service::{
-    api::utils::status::Status,
-    application::{connect_to_database, run},
-    helper::config::Config,
-    model::user::FilteredUser,
+    api::utils::status::Status, application::run, helper::config::Config, model::user::FilteredUser,
 };
 use dotenv::dotenv;
 use redis::{AsyncCommands, Client};
 use reqwest::{header::AUTHORIZATION, StatusCode};
 use serde::Deserialize;
-use sqlx::{Executor, Pool, Postgres};
+use sqlx::{postgres::PgPoolOptions, Executor, Pool, Postgres};
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
 
@@ -345,6 +342,24 @@ where
     let config = Config::init();
     let db = connect_to_database(&config).await;
     query(db).await;
+}
+
+#[cfg(test)]
+pub async fn connect_to_database(config: &Config) -> Pool<Postgres> {
+    match PgPoolOptions::new()
+        .max_connections(10)
+        .connect(&config.database_url)
+        .await
+    {
+        Ok(pool) => {
+            println!("Enstablished db connection");
+            pool
+        }
+        Err(err) => {
+            println!("Failed to connecto to db with error: {:?}", err);
+            std::process::exit(1)
+        }
+    }
 }
 
 #[cfg(test)]
