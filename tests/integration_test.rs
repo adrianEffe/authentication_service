@@ -268,7 +268,7 @@ async fn test_logout_success() {
 
     let token = response.data.unwrap().access_token;
 
-    let response: GenericResponse<UserData> = client
+    let response: GenericResponse<FilteredUser> = client
         .get(&logout_url)
         .header(AUTHORIZATION, format!("Bearer {}", token))
         .send()
@@ -294,7 +294,7 @@ async fn test_healthcheck() {
 
     let url = format!("http://{}/api/healthcheck", address);
 
-    let response: GenericResponse<UserData> =
+    let response: GenericResponse<FilteredUser> =
         reqwest::get(url).await.unwrap().json().await.unwrap();
 
     assert_eq!(response.status, Status::Success);
@@ -367,13 +367,6 @@ pub async fn connect_to_database(config: &Config) -> Pool<Postgres> {
 struct GenericResponse<T> {
     status: Status,
     data: Option<T>,
-}
-
-#[cfg(test)]
-#[deprecated]
-#[derive(Debug, Deserialize)]
-struct UserData {
-    user: FilteredUser,
 }
 
 #[cfg(test)]
