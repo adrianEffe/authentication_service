@@ -13,7 +13,7 @@ pub async fn register_handler<AR: AuthRepository, AS: AuthService>(
     let domain_request = body.try_into_domain()?;
 
     state
-        .auth_repository
+        .auth_service
         .register(&domain_request)
         .await
         .map_err(ApiError::from)
