@@ -30,7 +30,7 @@ where
         &self,
         request: &RegisterUserRequest,
     ) -> Result<FilteredUser, RegisterUserError> {
-        todo!();
+        self.repo.register(request).await
     }
 
     async fn login(&self, request: &LoginUserRequest) -> Result<User, LoginUserError> {
