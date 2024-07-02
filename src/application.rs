@@ -1,3 +1,4 @@
+use crate::domain::auth_service::AuthService;
 use crate::domain::repositories::auth_repository::AuthRepository;
 use crate::repositories::auth_repository::PostgresDB;
 use crate::{
@@ -21,7 +22,8 @@ use tokio::net::TcpListener;
 use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
 
-pub struct AppState<AR: AuthRepository> {
+pub struct AppState<AR: AuthRepository, AS: AuthService> {
+    pub auth_service: AS,
     pub auth_repository: AR,
     pub env: Config,
     pub redis: Client,
