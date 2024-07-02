@@ -7,6 +7,7 @@ pub mod login_response;
 pub mod login_user;
 pub mod register_user;
 pub mod token;
+pub mod token_uuid;
 pub mod user;
 pub mod user_email;
 pub mod user_id;
