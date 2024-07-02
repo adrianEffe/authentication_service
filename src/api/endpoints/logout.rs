@@ -1,52 +1,61 @@
 use std::sync::Arc;
 
+use anyhow::{anyhow, Result};
 use axum::{
     extract::State,
-    http::{header, HeaderMap, Response, StatusCode},
+    http::{header, HeaderMap, Response},
     response::IntoResponse,
-    Extension, Json,
+    Extension,
 };
 use axum_extra::extract::cookie::{Cookie, SameSite};
 
 use crate::{
-    api::utils::status::{response_message, Status},
     application::AppState,
     domain::{auth_service::AuthService, repositories::auth_repository::AuthRepository},
-    helper::redis_helper,
-    model::auth_middleware::AuthMiddleware,
+    model::{
+        api_error::ApiError,
+        api_response::ApiResponse,
+        auth::AuthorizationError,
+        auth_middleware::AuthMiddleware,
+        logout::{LogoutRequest, LogoutResponse},
+    },
 };
 
 pub async fn logout_handler<AR: AuthRepository, AS: AuthService>(
     Extension(auth_guard): Extension<AuthMiddleware>,
-    State(data): State<Arc<AppState<AR, AS>>>,
-) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    redis_helper::delete_token_data(&data.redis, &auth_guard.access_token_uuid.to_string())
+    State(state): State<Arc<AppState<AR, AS>>>,
+) -> Result<impl IntoResponse, ApiError> {
+    let domain_request = LogoutRequest::new(auth_guard.access_token_uuid);
+
+    let response = state
+        .auth_service
+        .logout(&domain_request)
         .await
-        .map_err(|_| {
-            let error_message = response_message(&Status::Failure, "Redis failed to delete token");
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_message))
-        })?;
+        .map_err(ApiError::from)?;
 
-    let headers = set_cookies_in_header()?;
+    let mut response = Response::new(
+        ApiResponse::<LogoutResponse>::success_message(response)
+            .to_json()
+            .to_string(),
+    );
 
-    let mut response =
-        Response::new(response_message(&Status::Success, "User logged out").to_string());
+    let headers = set_cookies_in_header().map_err(|e| {
+        AuthorizationError::Unknown(anyhow!(e).context("Failed to set cookies in header"))
+    })?;
+
     response.headers_mut().extend(headers);
+
     Ok(response)
 }
 
-fn set_cookies_in_header() -> Result<HeaderMap, (StatusCode, Json<serde_json::Value>)> {
+fn set_cookies_in_header() -> Result<HeaderMap> {
     let access_cookie = Cookie::build(("access_token", ""))
         .path("/")
         .max_age(time::Duration::minutes(-1))
         .same_site(SameSite::Lax)
         .http_only(true)
         .to_string()
-        .parse()
-        .map_err(|_| {
-            let error_message = response_message(&Status::Failure, "Failed to parse access cookie");
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_message))
-        })?;
+        .parse()?;
 
     let logged_in_cookie = Cookie::build(("logged_in", "true"))
         .path("/")
@@ -54,12 +63,7 @@ fn set_cookies_in_header() -> Result<HeaderMap, (StatusCode, Json<serde_json::Va
         .same_site(SameSite::Lax)
         .http_only(false)
         .to_string()
-        .parse()
-        .map_err(|_| {
-            let error_message =
-                response_message(&Status::Failure, "Failed to parse logged in cookie");
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_message))
-        })?;
+        .parse()?;
 
     let mut headers = HeaderMap::new();
     headers.append(header::SET_COOKIE, access_cookie);

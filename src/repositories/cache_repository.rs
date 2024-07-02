@@ -4,6 +4,7 @@ use redis::{AsyncCommands, Client};
 use crate::domain::repositories::cache_repository::CacheRepository;
 use crate::model::cache_errors::CacheOperationError;
 use crate::model::token::TokenDetails;
+use crate::model::token_uuid::TokenUuid;
 
 #[derive(Debug)]
 pub struct RedisCache {
@@ -72,6 +73,21 @@ impl CacheRepository for RedisCache {
             .map_err(|_| CacheOperationError::Invalid {
                 reason: "Token is invalid or session has expired".to_string(),
             })?;
+        Ok(())
+    }
+
+    async fn delete_token(&self, token_uuid: &TokenUuid) -> Result<(), CacheOperationError> {
+        let mut redis_client = self
+            .client
+            .get_multiplexed_async_connection()
+            .await
+            .map_err(|e| anyhow!(e).context("Failed to get redis connection"))?;
+
+        redis_client
+            .del(token_uuid.get_string())
+            .await
+            .map_err(|e| anyhow!(e).context("Failed to delete token from redis"))?;
+
         Ok(())
     }
 }

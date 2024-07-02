@@ -15,6 +15,7 @@ use crate::{
         auth_middleware::AuthMiddleware,
         login_response::LoginResponse,
         login_user::{LoginUserError, LoginUserRequest},
+        logout::{LogoutRequest, LogoutResponse},
         register_user::{RegisterUserError, RegisterUserRequest},
         user::FilteredUser,
         user_id::UserId,
@@ -90,5 +91,10 @@ where
             .await?;
 
         Ok(AuthMiddleware::new(user, access_token_details.token_uuid))
+    }
+
+    async fn logout(&self, request: &LogoutRequest) -> Result<LogoutResponse, AuthorizationError> {
+        self.cache.delete_token(request.get_uuid()).await?;
+        Ok(LogoutResponse::new("User logged out"))
     }
 }
