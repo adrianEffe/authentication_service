@@ -24,6 +24,14 @@ impl<T: Serialize> ApiResponse<T> {
         }
     }
 
+    pub fn success_message(message: String) -> Self {
+        ApiResponse {
+            status: Status::Success,
+            data: None,
+            message: Some(message),
+        }
+    }
+
     pub fn to_json(self) -> serde_json::Value {
         serde_json::json!(self)
     }
