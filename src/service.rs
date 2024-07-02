@@ -74,7 +74,10 @@ where
         let access_token_details = verify_jwt(
             &self.config.access_token_public_key,
             request.access_token.get(),
-        )?;
+        )
+        .map_err(|_| AuthorizationError::InvalidCredentials {
+            reason: "Access token no longer valid".to_string(),
+        })?;
 
         self.cache
             .verify_active_session(&access_token_details)
