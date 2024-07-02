@@ -16,7 +16,6 @@ use axum::{
     Router,
 };
 use redis::Client;
-use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tower_http::trace::{self, TraceLayer};
@@ -24,14 +23,11 @@ use tracing::Level;
 
 pub struct AppState<AR: AuthRepository> {
     pub auth_repository: AR,
-    pub db: Pool<Postgres>,
     pub env: Config,
     pub redis: Client,
 }
 
 pub async fn run(listener: TcpListener, config: Config) {
-    let pool = connect_to_database(&config).await;
-
     let redis_client = match Client::open(config.redis_url.to_owned()) {
         Ok(client) => {
             println!("Connection to redis successful");
@@ -47,7 +43,7 @@ pub async fn run(listener: TcpListener, config: Config) {
 
     let app_state = Arc::new(AppState {
         auth_repository: postgres,
-        db: pool,
+        // db: pool,
         env: config,
         redis: redis_client,
     });
@@ -77,22 +73,4 @@ fn app<AR: AuthRepository>(app_state: Arc<AppState<AR>>) -> Router {
                 .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
         )
         .with_state(app_state)
-}
-
-#[deprecated]
-pub async fn connect_to_database(config: &Config) -> Pool<Postgres> {
-    match PgPoolOptions::new()
-        .max_connections(10)
-        .connect(&config.database_url)
-        .await
-    {
-        Ok(pool) => {
-            println!("Enstablished db connection");
-            pool
-        }
-        Err(err) => {
-            println!("Failed to connecto to db with error: {:?}", err);
-            std::process::exit(1)
-        }
-    }
 }
