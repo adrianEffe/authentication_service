@@ -44,11 +44,12 @@ pub async fn run(listener: TcpListener, config: Config) {
     };
 
     let postgres = PostgresDB::new(&config.database_url).await.unwrap(); //TODO: handle unwrap
-    let redis = RedisCache;
+    let redis = RedisCache::new(&config.redis_url);
 
     let service = Service {
         repo: postgres.clone(), // TODO: remove clone
         cache: redis,
+        config: config.clone(), //TODO: remove clone
     };
 
     let app_state = Arc::new(AppState {
