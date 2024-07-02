@@ -1,15 +1,8 @@
 use crate::{
-    api::{
-        schemas::login_user::LoginUserSchema,
-        utils::{jwt::generate_jwt, password_hasher::is_valid},
-    },
+    api::schemas::login_user::LoginUserSchema,
     application::AppState,
     domain::{auth_service::AuthService, repositories::auth_repository::AuthRepository},
-    helper::redis_helper,
-    model::{
-        api_error::ApiError, api_response::ApiResponse, login_response::LoginResponse,
-        login_user::LoginUserError,
-    },
+    model::{api_error::ApiError, api_response::ApiResponse, login_user::LoginUserError},
 };
 use anyhow::anyhow;
 use axum::{
@@ -26,57 +19,23 @@ pub async fn login_handler<AR: AuthRepository, AS: AuthService>(
     Json(body): Json<LoginUserSchema>,
 ) -> Result<impl IntoResponse, ApiError> {
     let domain_request = body.try_into_domain()?;
-    let user = state.auth_repository.login(&domain_request).await?;
-
-    let is_valid = is_valid(&body.password, &user.password);
-    if !is_valid {
-        return Err(ApiError::from(LoginUserError::InvalidCredentials));
-    }
-
-    let access_token_details = generate_jwt(
-        user.id,
-        state.env.access_token_max_age,
-        &state.env.access_token_private_key,
-    )
-    .map_err(|e| {
-        ApiError::from(LoginUserError::Unknown(
-            anyhow!(e).context("Failed to generate jwt token"),
-        ))
-    })?;
-
-    // TODO: - abstract redis away
-    redis_helper::save_token_data(
-        &state,
-        &access_token_details,
-        state.env.access_token_max_age,
-    )
-    .await
-    .map_err(|e| {
-        ApiError::from(LoginUserError::Unknown(
-            anyhow!(e).context("Failed to save token to redis"),
-        ))
-    })?;
-
-    let access_token = access_token_details.token.ok_or_else(|| {
-        ApiError::from(LoginUserError::Unknown(anyhow!("Failed to generate token")))
-    })?;
-
-    let mut response = Response::new(
-        ApiResponse::success(LoginResponse {
-            access_token: access_token.to_owned(),
-        })
-        .to_json()
-        .to_string(),
-    );
+    let login_response = state
+        .auth_service
+        .login(&domain_request)
+        .await
+        .map_err(ApiError::from)?;
 
     let headers =
-        set_cookies_in_header(&access_token, state.env.access_token_max_age).map_err(|e| {
-            ApiError::from(LoginUserError::Unknown(
-                anyhow!(e).context("Failed to set cookies in header"),
-            ))
-        })?;
+        set_cookies_in_header(&login_response.access_token, state.env.access_token_max_age)
+            .map_err(|e| {
+                ApiError::from(LoginUserError::Unknown(
+                    anyhow!(e).context("Failed to set cookies in header"),
+                ))
+            })?;
 
+    let mut response = Response::new(ApiResponse::success(login_response).to_json().to_string());
     response.headers_mut().extend(headers);
+
     Ok(response)
 }
 

@@ -1,4 +1,5 @@
 use crate::model::auth::{AuthRequest, AuthorizationError};
+use crate::model::login_response::LoginResponse;
 use crate::model::login_user::{LoginUserError, LoginUserRequest};
 use crate::model::register_user::{RegisterUserError, RegisterUserRequest};
 use crate::model::user::{FilteredUser, User};
@@ -13,7 +14,7 @@ pub trait AuthService: Send + Sync + 'static {
     fn login(
         &self,
         request: &LoginUserRequest,
-    ) -> impl Future<Output = Result<User, LoginUserError>> + Send;
+    ) -> impl Future<Output = Result<LoginResponse, LoginUserError>> + Send;
 
     fn auth(
         &self,

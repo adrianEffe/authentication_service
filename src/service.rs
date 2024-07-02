@@ -1,12 +1,15 @@
+use anyhow::anyhow;
+
 use crate::{
     api::utils::{jwt::generate_jwt, password_hasher::is_valid},
     domain::{
         auth_service::AuthService,
         repositories::{auth_repository::AuthRepository, cache_repository::CacheRepository},
     },
-    helper::{config::Config, redis_helper},
+    helper::config::Config,
     model::{
         auth::{AuthRequest, AuthorizationError},
+        login_response::LoginResponse,
         login_user::{LoginUserError, LoginUserRequest},
         register_user::{RegisterUserError, RegisterUserRequest},
         user::{FilteredUser, User},
@@ -36,7 +39,7 @@ where
         self.repo.register(request).await
     }
 
-    async fn login(&self, request: &LoginUserRequest) -> Result<User, LoginUserError> {
+    async fn login(&self, request: &LoginUserRequest) -> Result<LoginResponse, LoginUserError> {
         let user = self.repo.login(request).await?;
 
         let is_valid = is_valid(request.password.get(), &user.password);
@@ -49,30 +52,17 @@ where
             self.config.access_token_max_age,
             &self.config.access_token_private_key,
         )?;
-        // .map_err(|e| {
-        //     ApiError::from(LoginUserError::Unknown(
-        //         anyhow!(e).context("Failed to generate jwt token"),
-        //     ))
-        // })?;
-        //
-        // // TODO: - abstract redis away
-        // redis_helper::save_token_data(
-        //     &state,
-        //     &access_token_details,
-        //     state.env.access_token_max_age,
-        // )
-        // .await?;
-        // .map_err(|e| {
-        //     ApiError::from(LoginUserError::Unknown(
-        //         anyhow!(e).context("Failed to save token to redis"),
-        //     ))
-        // })?;
-        //
-        // let access_token = access_token_details.token.ok_or_else(|| {
-        //     ApiError::from(LoginUserError::Unknown(anyhow!("Failed to generate token")))
-        // })?;
-        //
-        todo!();
+
+        self.cache
+            .save_token_data(&access_token_details, self.config.access_token_max_age)
+            .await
+            .map_err(|e| anyhow!(e).context("Failed redis operation"))?;
+
+        let access_token = access_token_details
+            .token
+            .ok_or_else(|| anyhow!("Failed to generate token"))?;
+
+        Ok(LoginResponse { access_token })
     }
 
     async fn auth(&self, request: &AuthRequest) -> Result<User, AuthorizationError> {
