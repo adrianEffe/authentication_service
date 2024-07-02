@@ -294,10 +294,9 @@ async fn test_healthcheck() {
 
     let url = format!("http://{}/api/healthcheck", address);
 
-    let response: GenericResponse<FilteredUser> =
-        reqwest::get(url).await.unwrap().json().await.unwrap();
+    let response = reqwest::get(url).await.unwrap();
 
-    assert_eq!(response.status, Status::Success);
+    assert_eq!(response.status(), StatusCode::OK);
 }
 
 #[cfg(test)]

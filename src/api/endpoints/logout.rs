@@ -11,7 +11,7 @@ use axum_extra::extract::cookie::{Cookie, SameSite};
 
 use crate::{
     application::AppState,
-    domain::{auth_service::AuthService, repositories::auth_repository::AuthRepository},
+    domain::auth_service::AuthService,
     model::{
         api_error::ApiError,
         api_response::ApiResponse,
@@ -21,9 +21,9 @@ use crate::{
     },
 };
 
-pub async fn logout_handler<AR: AuthRepository, AS: AuthService>(
+pub async fn logout_handler<AS: AuthService>(
     Extension(auth_guard): Extension<AuthMiddleware>,
-    State(state): State<Arc<AppState<AR, AS>>>,
+    State(state): State<Arc<AppState<AS>>>,
 ) -> Result<impl IntoResponse, ApiError> {
     let domain_request = LogoutRequest::new(auth_guard.access_token_uuid);
 

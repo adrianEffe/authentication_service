@@ -1,7 +1,7 @@
 use crate::{
     api::schemas::login_user::LoginUserSchema,
     application::AppState,
-    domain::{auth_service::AuthService, repositories::auth_repository::AuthRepository},
+    domain::auth_service::AuthService,
     model::{api_error::ApiError, api_response::ApiResponse, login_user::LoginUserError},
 };
 use anyhow::anyhow;
@@ -14,8 +14,8 @@ use axum::{
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use std::sync::Arc;
 
-pub async fn login_handler<AR: AuthRepository, AS: AuthService>(
-    State(state): State<Arc<AppState<AR, AS>>>,
+pub async fn login_handler<AS: AuthService>(
+    State(state): State<Arc<AppState<AS>>>,
     Json(body): Json<LoginUserSchema>,
 ) -> Result<impl IntoResponse, ApiError> {
     let domain_request = body.try_into_domain()?;
@@ -25,13 +25,15 @@ pub async fn login_handler<AR: AuthRepository, AS: AuthService>(
         .await
         .map_err(ApiError::from)?;
 
-    let headers =
-        set_cookies_in_header(&login_response.access_token, state.env.access_token_max_age)
-            .map_err(|e| {
-                ApiError::from(LoginUserError::Unknown(
-                    anyhow!(e).context("Failed to set cookies in header"),
-                ))
-            })?;
+    let headers = set_cookies_in_header(
+        &login_response.access_token,
+        login_response.access_token_max_age,
+    )
+    .map_err(|e| {
+        ApiError::from(LoginUserError::Unknown(
+            anyhow!(e).context("Failed to set cookies in header"),
+        ))
+    })?;
 
     let mut response = Response::new(ApiResponse::success(login_response).to_json().to_string());
     response.headers_mut().extend(headers);

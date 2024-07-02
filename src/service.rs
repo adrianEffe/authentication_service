@@ -68,7 +68,10 @@ where
             .token
             .ok_or_else(|| anyhow!("Failed to generate token"))?;
 
-        Ok(LoginResponse { access_token })
+        Ok(LoginResponse {
+            access_token,
+            access_token_max_age: self.config.access_token_max_age,
+        })
     }
 
     async fn auth(&self, request: &AuthRequest) -> Result<AuthMiddleware, AuthorizationError> {
