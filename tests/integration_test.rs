@@ -307,7 +307,7 @@ async fn spawn_server() -> SocketAddr {
     let config = Config::init();
 
     tokio::spawn(async move {
-        run(listener, config).await;
+        run(listener, config).await.expect("Failed to run app");
     });
 
     address

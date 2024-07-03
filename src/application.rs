@@ -12,6 +12,7 @@ use crate::{
     },
     helper::config::Config,
 };
+use anyhow::Result;
 use axum::{
     middleware,
     routing::{get, post},
@@ -26,8 +27,8 @@ pub struct AppState<AS: AuthService> {
     pub auth_service: AS,
 }
 
-pub async fn run(listener: TcpListener, config: Config) {
-    let postgres = PostgresDB::new(&config.database_url).await.unwrap(); //TODO: handle unwrap
+pub async fn run(listener: TcpListener, config: Config) -> Result<()> {
+    let postgres = PostgresDB::new(&config.database_url).await?;
     let redis = RedisCache::new(&config.redis_url);
 
     let service = Service {
@@ -41,7 +42,9 @@ pub async fn run(listener: TcpListener, config: Config) {
     });
 
     let app = app(app_state);
-    axum::serve(listener, app).await.unwrap(); //TODO: handle unwrap
+    axum::serve(listener, app).await?;
+
+    Ok(())
 }
 
 fn app<AS: AuthService>(app_state: Arc<AppState<AS>>) -> Router {
