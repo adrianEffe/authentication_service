@@ -4,9 +4,8 @@ use crate::model::{
 };
 use axum::{http::StatusCode, response::IntoResponse};
 
-use super::{
-    auth::AuthorizationError, login_user::LoginUserError, register_user::PasswordHashingError,
-};
+use super::{login_user::LoginUserError, register_user::PasswordHashingError};
+use crate::domain::model::auth::AuthorizationError;
 
 #[derive(Debug)]
 pub enum ApiError {

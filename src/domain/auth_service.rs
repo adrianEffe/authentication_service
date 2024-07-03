@@ -1,4 +1,4 @@
-use crate::model::auth::{AuthRequest, AuthorizationError};
+use crate::domain::model::auth::{AuthRequest, AuthorizationError};
 use crate::model::auth_middleware::AuthMiddleware;
 use crate::model::login_response::LoginResponse;
 use crate::model::login_user::{LoginUserError, LoginUserRequest};

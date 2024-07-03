@@ -7,11 +7,11 @@ use crate::{
     },
     domain::{
         auth_service::AuthService,
+        model::auth::{AuthRequest, AuthorizationError},
         repositories::{auth_repository::AuthRepository, cache_repository::CacheRepository},
     },
     helper::config::Config,
     model::{
-        auth::{AuthRequest, AuthorizationError},
         auth_middleware::AuthMiddleware,
         login_response::LoginResponse,
         login_user::{LoginUserError, LoginUserRequest},
