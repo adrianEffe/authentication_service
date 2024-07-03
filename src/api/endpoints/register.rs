@@ -1,7 +1,9 @@
-use crate::api::schemas::register_user::RegisterUserSchema;
-use crate::application::AppState;
-use crate::domain::auth_service::AuthService;
-use crate::model::{api_error::ApiError, api_response::ApiResponse, user::FilteredUser};
+use crate::{
+    api::model::{api_error::ApiError, api_response::ApiResponse},
+    api::schemas::register_user::RegisterUserSchema,
+    application::AppState,
+    domain::{auth_service::AuthService, model::user::FilteredUser},
+};
 use axum::{extract::State, Json};
 use std::sync::Arc;
 

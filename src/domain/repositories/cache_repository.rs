@@ -1,8 +1,8 @@
 use std::future::Future;
 
-use crate::domain::model::cache_errors::CacheOperationError;
-use crate::model::token::TokenDetails;
-use crate::model::token_uuid::TokenUuid;
+use crate::domain::model::{
+    cache_errors::CacheOperationError, token::TokenDetails, token_uuid::TokenUuid,
+};
 
 pub trait CacheRepository: Send + Sync + 'static {
     fn save_token_data(

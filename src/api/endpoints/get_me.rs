@@ -1,8 +1,8 @@
 use axum::Extension;
 
-use crate::model::{
-    api_error::ApiError, api_response::ApiResponse, auth_middleware::AuthMiddleware,
-    user::FilteredUser,
+use crate::{
+    api::model::{api_error::ApiError, api_response::ApiResponse},
+    domain::model::{auth_middleware::AuthMiddleware, user::FilteredUser},
 };
 
 pub async fn get_me_handler(

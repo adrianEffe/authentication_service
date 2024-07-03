@@ -1,11 +1,11 @@
-use crate::model::{
-    register_user::RegisterUserError, user_email::UserEmailEmptyError,
+use crate::domain::model::{
+    auth::AuthorizationError,
+    login_user::LoginUserError,
+    register_user::{PasswordHashingError, RegisterUserError},
+    user_email::UserEmailEmptyError,
     user_password::UserPasswordEmptyError,
 };
 use axum::{http::StatusCode, response::IntoResponse};
-
-use super::{login_user::LoginUserError, register_user::PasswordHashingError};
-use crate::domain::model::auth::AuthorizationError;
 
 #[derive(Debug)]
 pub enum ApiError {

@@ -1,5 +1,6 @@
 use authentication_service::{
-    api::utils::status::Status, application::run, helper::config::Config, model::user::FilteredUser,
+    api::utils::status::Status, application::run, domain::model::user::FilteredUser,
+    helper::config::Config,
 };
 use dotenv::dotenv;
 use redis::{AsyncCommands, Client};

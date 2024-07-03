@@ -1,10 +1,14 @@
-use crate::domain::model::auth::AuthorizationError;
-use crate::domain::repositories::auth_repository::AuthRepository;
-use crate::model::login_user::{LoginUserError, LoginUserRequest};
-use crate::model::register_user::{RegisterUserError, RegisterUserRequest};
-use crate::model::user::{FilteredUser, User};
-use crate::model::user_email::UserEmail;
-use crate::model::user_id::UserId;
+use crate::domain::{
+    model::{
+        auth::AuthorizationError,
+        login_user::{LoginUserError, LoginUserRequest},
+        register_user::{RegisterUserError, RegisterUserRequest},
+        user::{FilteredUser, User},
+        user_email::UserEmail,
+        user_id::UserId,
+    },
+    repositories::auth_repository::AuthRepository,
+};
 use anyhow::{anyhow, Context};
 use sqlx::{postgres::PgPoolOptions, Postgres};
 

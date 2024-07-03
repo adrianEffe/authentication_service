@@ -7,19 +7,19 @@ use crate::{
     },
     domain::{
         auth_service::AuthService,
-        model::auth::{AuthRequest, AuthorizationError},
+        model::{
+            auth::{AuthRequest, AuthorizationError},
+            auth_middleware::AuthMiddleware,
+            login_response::LoginResponse,
+            login_user::{LoginUserError, LoginUserRequest},
+            logout::{LogoutRequest, LogoutResponse},
+            register_user::{RegisterUserError, RegisterUserRequest},
+            user::FilteredUser,
+            user_id::UserId,
+        },
         repositories::{auth_repository::AuthRepository, cache_repository::CacheRepository},
     },
     helper::config::Config,
-    model::{
-        auth_middleware::AuthMiddleware,
-        login_response::LoginResponse,
-        login_user::{LoginUserError, LoginUserRequest},
-        logout::{LogoutRequest, LogoutResponse},
-        register_user::{RegisterUserError, RegisterUserRequest},
-        user::FilteredUser,
-        user_id::UserId,
-    },
 };
 
 #[derive(Debug)]

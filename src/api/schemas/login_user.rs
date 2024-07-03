@@ -1,8 +1,10 @@
 use serde::Deserialize;
 
-use crate::model::{
-    api_error::ApiError, login_user::LoginUserRequest, user_email::UserEmail,
-    user_password::UserPassword,
+use crate::{
+    api::model::api_error::ApiError,
+    domain::model::{
+        login_user::LoginUserRequest, user_email::UserEmail, user_password::UserPassword,
+    },
 };
 
 #[derive(Debug, Deserialize)]
