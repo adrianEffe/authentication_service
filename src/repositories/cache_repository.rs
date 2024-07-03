@@ -2,10 +2,9 @@ use anyhow::anyhow;
 use redis::{AsyncCommands, Client};
 
 use crate::domain::{
-    model::cache_errors::CacheOperationError, repositories::cache_repository::CacheRepository,
+    model::{cache_errors::CacheOperationError, token::TokenDetails, token_uuid::TokenUuid},
+    repositories::cache_repository::CacheRepository,
 };
-use crate::model::token::TokenDetails;
-use crate::model::token_uuid::TokenUuid;
 
 #[derive(Debug)]
 pub struct RedisCache {

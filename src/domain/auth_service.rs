@@ -1,12 +1,13 @@
 use crate::domain::model::{
     auth::{AuthRequest, AuthorizationError},
+    auth_middleware::AuthMiddleware,
+    login_response::LoginResponse,
     login_user::{LoginUserError, LoginUserRequest},
+    logout::{LogoutRequest, LogoutResponse},
     register_user::{RegisterUserError, RegisterUserRequest},
+    user::FilteredUser,
 };
-use crate::model::auth_middleware::AuthMiddleware;
-use crate::model::login_response::LoginResponse;
-use crate::model::logout::{LogoutRequest, LogoutResponse};
-use crate::model::user::FilteredUser;
+
 use std::future::Future;
 
 pub trait AuthService: Send + Sync + 'static {

@@ -2,9 +2,9 @@ use crate::domain::model::{
     auth::AuthorizationError,
     login_user::{LoginUserError, LoginUserRequest},
     register_user::{RegisterUserError, RegisterUserRequest},
+    user::{FilteredUser, User},
+    user_id::UserId,
 };
-use crate::model::user::{FilteredUser, User};
-use crate::model::user_id::UserId;
 use std::future::Future;
 
 pub trait AuthRepository: Send + Sync + 'static {

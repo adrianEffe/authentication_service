@@ -1,4 +1,4 @@
-use crate::model::token::{TokenClaims, TokenDetails};
+use crate::domain::model::token::{TokenClaims, TokenDetails};
 use anyhow::Result;
 use base64::{engine::general_purpose, Engine};
 
