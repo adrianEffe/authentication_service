@@ -1,6 +1,8 @@
-use crate::domain::model::auth::AuthorizationError;
-use crate::model::login_user::{LoginUserError, LoginUserRequest};
-use crate::model::register_user::{RegisterUserError, RegisterUserRequest};
+use crate::domain::model::{
+    auth::AuthorizationError,
+    login_user::{LoginUserError, LoginUserRequest},
+    register_user::{RegisterUserError, RegisterUserRequest},
+};
 use crate::model::user::{FilteredUser, User};
 use crate::model::user_id::UserId;
 use std::future::Future;

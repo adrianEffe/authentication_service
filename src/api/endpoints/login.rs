@@ -1,8 +1,8 @@
 use crate::{
     api::schemas::login_user::LoginUserSchema,
     application::AppState,
-    domain::auth_service::AuthService,
-    model::{api_error::ApiError, api_response::ApiResponse, login_user::LoginUserError},
+    domain::{auth_service::AuthService, model::login_user::LoginUserError},
+    model::{api_error::ApiError, api_response::ApiResponse},
 };
 use anyhow::anyhow;
 use axum::{

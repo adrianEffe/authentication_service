@@ -1,8 +1,10 @@
-use crate::model::{
-    api_error::ApiError,
-    register_user::{HashedUserPassword, RegisterUserRequest},
-    user_email::UserEmail,
-    user_password::UserPassword,
+use crate::{
+    domain::model::{
+        register_user::{HashedUserPassword, RegisterUserRequest},
+        user_email::UserEmail,
+        user_password::UserPassword,
+    },
+    model::api_error::ApiError,
 };
 use serde::Deserialize;
 
