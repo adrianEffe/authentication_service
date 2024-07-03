@@ -1,8 +1,9 @@
 use anyhow::anyhow;
 use redis::{AsyncCommands, Client};
 
-use crate::domain::repositories::cache_repository::CacheRepository;
-use crate::model::cache_errors::CacheOperationError;
+use crate::domain::{
+    model::cache_errors::CacheOperationError, repositories::cache_repository::CacheRepository,
+};
 use crate::model::token::TokenDetails;
 use crate::model::token_uuid::TokenUuid;
 

@@ -1,11 +1,12 @@
 use crate::{
     application::AppState,
-    domain::auth_service::AuthService,
-    model::{
-        api_error::ApiError,
-        auth::{AuthRequest, AuthorizationError},
+    domain::{
+        auth_service::AuthService,
+        model::auth::{AuthRequest, AuthorizationError},
     },
+    model::api_error::ApiError,
 };
+
 use axum::{
     body::Body,
     extract::State,

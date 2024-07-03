@@ -11,11 +11,10 @@ use axum_extra::extract::cookie::{Cookie, SameSite};
 
 use crate::{
     application::AppState,
-    domain::auth_service::AuthService,
+    domain::{auth_service::AuthService, model::auth::AuthorizationError},
     model::{
         api_error::ApiError,
         api_response::ApiResponse,
-        auth::AuthorizationError,
         auth_middleware::AuthMiddleware,
         logout::{LogoutRequest, LogoutResponse},
     },

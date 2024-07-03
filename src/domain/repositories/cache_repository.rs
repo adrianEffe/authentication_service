@@ -1,6 +1,6 @@
 use std::future::Future;
 
-use crate::model::cache_errors::CacheOperationError;
+use crate::domain::model::cache_errors::CacheOperationError;
 use crate::model::token::TokenDetails;
 use crate::model::token_uuid::TokenUuid;
 
