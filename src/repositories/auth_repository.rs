@@ -128,9 +128,11 @@ mod tests {
         model::{
             auth::AuthorizationError,
             login_user::{LoginUserError, LoginUserRequest},
-            register_user::{RegisterUserError, RegisterUserRequest},
+            register_user::{HashedUserPassword, RegisterUserError, RegisterUserRequest},
             user::{FilteredUser, User},
+            user_email::UserEmail,
             user_id::UserId,
+            user_password::UserPassword,
         },
         repositories::auth_repository::AuthRepository,
     };
@@ -168,5 +170,57 @@ mod tests {
             mem::swap(guard.deref_mut(), &mut result);
             result
         }
+    }
+
+    // TODO: - Remove sanity check tests
+    #[tokio::test]
+    async fn test_register_success() {
+        let email = "adrian@email.com";
+        let password = "password";
+        let user = User::new(email, password);
+        let filtered_user = FilteredUser::from(&user);
+        let register_result = Arc::new(Mutex::new(Ok(filtered_user)));
+        let auth_result = Arc::new(Mutex::new(Ok(user.clone())));
+        let login_result = Arc::new(Mutex::new(Ok(user)));
+
+        let mock_repo = MockAuthRepository {
+            register_result,
+            auth_result,
+            login_result,
+        };
+
+        let register = mock_repo
+            .register(&RegisterUserRequest::new(
+                UserEmail::new(email).unwrap(),
+                HashedUserPassword::new(UserPassword::new(password).unwrap()).unwrap(),
+            ))
+            .await;
+
+        assert_eq!(email.to_string(), register.unwrap().email);
+    }
+
+    #[tokio::test]
+    async fn test_auth_success() {
+        let email = "adrian@email.com";
+        let password = "password";
+        let mut user = User::new(email, password);
+        let uuid = uuid::Uuid::new_v4();
+        user.id = uuid;
+        let filtered_user = FilteredUser::from(&user);
+        let register_result = Arc::new(Mutex::new(Ok(filtered_user)));
+        let auth_result = Arc::new(Mutex::new(Ok(user.clone())));
+        let login_result = Arc::new(Mutex::new(Ok(user)));
+
+        let user_id = UserId::new(uuid);
+
+        let mock_repo = MockAuthRepository {
+            register_result,
+            auth_result,
+            login_result,
+        };
+
+        let register = mock_repo.auth(&user_id).await;
+
+        assert_eq!(user_id.get(), &register.unwrap().id);
     }
 }
