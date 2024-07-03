@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+//TODO: add getters and setters
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TokenClaims {
     pub sub: String,
