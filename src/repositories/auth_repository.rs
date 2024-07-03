@@ -116,3 +116,57 @@ impl PostgresDB {
             })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::{mem, ops::DerefMut, sync::Arc};
+
+    use anyhow::anyhow;
+    use tokio::sync::Mutex;
+
+    use crate::domain::{
+        model::{
+            auth::AuthorizationError,
+            login_user::{LoginUserError, LoginUserRequest},
+            register_user::{RegisterUserError, RegisterUserRequest},
+            user::{FilteredUser, User},
+            user_id::UserId,
+        },
+        repositories::auth_repository::AuthRepository,
+    };
+
+    struct MockAuthRepository {
+        /// It would be great for result to just take a Result instead of the below, unfortunately
+        /// it needs to conform to `Clone` but RegisterUserError` has an `Unknown` variant that
+        /// might wrap errors that are not Clone.
+        register_result: Arc<Mutex<Result<FilteredUser, RegisterUserError>>>,
+        auth_result: Arc<Mutex<Result<User, AuthorizationError>>>,
+        login_result: Arc<Mutex<Result<User, LoginUserError>>>,
+    }
+
+    impl AuthRepository for MockAuthRepository {
+        async fn register(
+            &self,
+            _request: &RegisterUserRequest,
+        ) -> Result<FilteredUser, RegisterUserError> {
+            let mut guard = self.register_result.lock().await;
+            let mut result = Err(RegisterUserError::Unknown(anyhow!("substitute error")));
+            mem::swap(guard.deref_mut(), &mut result);
+            result
+        }
+
+        async fn auth(&self, _request: &UserId) -> Result<User, AuthorizationError> {
+            let mut guard = self.auth_result.lock().await;
+            let mut result = Err(AuthorizationError::Unknown(anyhow!("substitute error")));
+            mem::swap(guard.deref_mut(), &mut result);
+            result
+        }
+
+        async fn login(&self, _request: &LoginUserRequest) -> Result<User, LoginUserError> {
+            let mut guard = self.login_result.lock().await;
+            let mut result = Err(LoginUserError::Unknown(anyhow!("substitute error")));
+            mem::swap(guard.deref_mut(), &mut result);
+            result
+        }
+    }
+}
