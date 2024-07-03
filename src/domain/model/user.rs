@@ -10,6 +10,19 @@ pub struct User {
     pub updated_at: Option<DateTime<Utc>>,
 }
 
+impl User {
+    pub fn new(email: &str, password: &str) -> User {
+        let now = Utc::now();
+        User {
+            id: uuid::Uuid::new_v4(),
+            email: email.to_string(),
+            password: password.to_string(),
+            created_at: Some(now),
+            updated_at: Some(now),
+        }
+    }
+}
+
 #[derive(Deserialize, Serialize, Debug)]
 pub struct FilteredUser {
     pub id: uuid::Uuid,
