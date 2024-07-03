@@ -1,10 +1,10 @@
 use crate::{
+    api::model::api_error::ApiError,
     application::AppState,
     domain::{
         auth_service::AuthService,
         model::auth::{AuthRequest, AuthorizationError},
     },
-    model::api_error::ApiError,
 };
 
 use axum::{

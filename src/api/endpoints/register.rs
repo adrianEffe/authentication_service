@@ -1,8 +1,8 @@
 use crate::{
+    api::model::{api_error::ApiError, api_response::ApiResponse},
     api::schemas::register_user::RegisterUserSchema,
     application::AppState,
     domain::{auth_service::AuthService, model::user::FilteredUser},
-    model::{api_error::ApiError, api_response::ApiResponse},
 };
 use axum::{extract::State, Json};
 use std::sync::Arc;

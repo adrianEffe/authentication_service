@@ -10,6 +10,7 @@ use axum::{
 use axum_extra::extract::cookie::{Cookie, SameSite};
 
 use crate::{
+    api::model::{api_error::ApiError, api_response::ApiResponse},
     application::AppState,
     domain::{
         auth_service::AuthService,
@@ -19,7 +20,6 @@ use crate::{
             logout::{LogoutRequest, LogoutResponse},
         },
     },
-    model::{api_error::ApiError, api_response::ApiResponse},
 };
 
 pub async fn logout_handler<AS: AuthService>(
