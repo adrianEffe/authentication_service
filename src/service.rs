@@ -303,4 +303,26 @@ mod test {
 
         assert!(result.is_ok())
     }
+
+    #[tokio::test]
+    async fn test_invalid_token_failure() {
+        let email = "adrian@email.com";
+        let password = "password";
+
+        let repo = MockAuthRepository::success(email, password);
+        let cache = MockCacheRepository::success();
+        let config = Config::init();
+
+        let state = Service {
+            repo,
+            cache,
+            config,
+        };
+
+        let result = state
+            .auth(&AuthRequest::new("Invalid token".to_string()))
+            .await;
+
+        assert!(result.is_err())
+    }
 }
