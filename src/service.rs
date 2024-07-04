@@ -404,4 +404,46 @@ mod test {
 
         assert!(result.is_ok())
     }
+
+    #[tokio::test]
+    async fn test_logout_cache_failure() {
+        let email = "adrian@email.com";
+        let password = "password";
+        let config = Config::init();
+
+        let repo = MockAuthRepository::success(email, password);
+        let cache = MockCacheRepository::failure();
+
+        let state = Service {
+            repo,
+            cache,
+            config,
+        };
+
+        let result = state
+            .logout(&LogoutRequest::new(uuid::Uuid::new_v4()))
+            .await;
+
+        assert!(result.is_err())
+    }
+
+    #[tokio::test]
+    async fn test_logout_db_failure() {
+        let config = Config::init();
+
+        let repo = MockAuthRepository::failure();
+        let cache = MockCacheRepository::success();
+
+        let state = Service {
+            repo,
+            cache,
+            config,
+        };
+
+        let result = state
+            .logout(&LogoutRequest::new(uuid::Uuid::new_v4()))
+            .await;
+
+        assert!(result.is_ok())
+    }
 }
