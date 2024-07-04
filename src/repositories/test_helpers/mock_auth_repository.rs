@@ -52,25 +52,46 @@ pub mod test_helpers {
         }
     }
 
+    impl MockAuthRepository {
+        pub fn success(email: &str, password: &str) -> MockAuthRepository {
+            let user = User::new(email, password);
+            let filtered_user = FilteredUser::from(&user);
+            let register_result = Arc::new(Mutex::new(Ok(filtered_user)));
+            let auth_result = Arc::new(Mutex::new(Ok(user.clone())));
+            let login_result = Arc::new(Mutex::new(Ok(user)));
+
+            MockAuthRepository {
+                register_result,
+                auth_result,
+                login_result,
+            }
+        }
+
+        pub fn failure() -> MockAuthRepository {
+            let register_result = Arc::new(Mutex::new(Err(RegisterUserError::Unknown(anyhow!(
+                "register result error"
+            )))));
+            let auth_result = Arc::new(Mutex::new(Err(AuthorizationError::Unknown(anyhow!(
+                "auth result error"
+            )))));
+            let login_result = Arc::new(Mutex::new(Err(LoginUserError::Unknown(anyhow!(
+                "login result error"
+            )))));
+
+            MockAuthRepository {
+                register_result,
+                auth_result,
+                login_result,
+            }
+        }
+    }
+
     #[tokio::test]
     async fn test_register_success() {
         let email = "adrian@email.com";
         let password = "password";
-        let user = User::new(email, password);
-        let filtered_user = FilteredUser::from(&user);
-        let register_result = Arc::new(Mutex::new(Ok(filtered_user)));
-        let auth_result = Arc::new(Mutex::new(Err(AuthorizationError::Unknown(anyhow!(
-            "auth result error"
-        )))));
-        let login_result = Arc::new(Mutex::new(Err(LoginUserError::Unknown(anyhow!(
-            "login result error"
-        )))));
 
-        let mock_repo = MockAuthRepository {
-            register_result,
-            auth_result,
-            login_result,
-        };
+        let mock_repo = MockAuthRepository::success(email, password);
 
         let result = mock_repo
             .register(&RegisterUserRequest::new(
@@ -86,21 +107,8 @@ pub mod test_helpers {
     async fn test_register_failure() {
         let email = "adrian@email.com";
         let password = "password";
-        let register_result = Arc::new(Mutex::new(Err(RegisterUserError::Unknown(anyhow!(
-            "register result error"
-        )))));
-        let auth_result = Arc::new(Mutex::new(Err(AuthorizationError::Unknown(anyhow!(
-            "auth result error"
-        )))));
-        let login_result = Arc::new(Mutex::new(Err(LoginUserError::Unknown(anyhow!(
-            "login result error"
-        )))));
 
-        let mock_repo = MockAuthRepository {
-            register_result,
-            auth_result,
-            login_result,
-        };
+        let mock_repo = MockAuthRepository::failure();
 
         let result = mock_repo
             .register(&RegisterUserRequest::new(
@@ -116,50 +124,22 @@ pub mod test_helpers {
     async fn test_auth_success() {
         let email = "adrian@email.com";
         let password = "password";
-        let mut user = User::new(email, password);
         let uuid = uuid::Uuid::new_v4();
-        user.id = uuid;
-        let register_result = Arc::new(Mutex::new(Err(RegisterUserError::Unknown(anyhow!(
-            "register result error"
-        )))));
-        let auth_result = Arc::new(Mutex::new(Ok(user.clone())));
-        let login_result = Arc::new(Mutex::new(Err(LoginUserError::Unknown(anyhow!(
-            "login result error"
-        )))));
-
         let user_id = UserId::new(uuid);
 
-        let mock_repo = MockAuthRepository {
-            register_result,
-            auth_result,
-            login_result,
-        };
+        let mock_repo = MockAuthRepository::success(email, password);
 
         let result = mock_repo.auth(&user_id).await;
 
-        assert_eq!(user_id.get(), &result.unwrap().id);
+        assert_eq!(email, &result.unwrap().email);
     }
 
     #[tokio::test]
     async fn test_auth_failure() {
         let uuid = uuid::Uuid::new_v4();
-        let register_result = Arc::new(Mutex::new(Err(RegisterUserError::Unknown(anyhow!(
-            "register result error"
-        )))));
-        let auth_result = Arc::new(Mutex::new(Err(AuthorizationError::Unknown(anyhow!(
-            "auth result error"
-        )))));
-        let login_result = Arc::new(Mutex::new(Err(LoginUserError::Unknown(anyhow!(
-            "login result error"
-        )))));
-
         let user_id = UserId::new(uuid);
 
-        let mock_repo = MockAuthRepository {
-            register_result,
-            auth_result,
-            login_result,
-        };
+        let mock_repo = MockAuthRepository::failure();
 
         let result = mock_repo.auth(&user_id).await;
 
@@ -170,20 +150,8 @@ pub mod test_helpers {
     async fn test_login_success() {
         let email = "adrian@email.com";
         let password = "password";
-        let user = User::new(email, password);
-        let register_result = Arc::new(Mutex::new(Err(RegisterUserError::Unknown(anyhow!(
-            "register result error"
-        )))));
-        let auth_result = Arc::new(Mutex::new(Err(AuthorizationError::Unknown(anyhow!(
-            "auth result error"
-        )))));
-        let login_result = Arc::new(Mutex::new(Ok(user)));
 
-        let mock_repo = MockAuthRepository {
-            register_result,
-            auth_result,
-            login_result,
-        };
+        let mock_repo = MockAuthRepository::success(email, password);
 
         let result = mock_repo
             .login(&LoginUserRequest::new(
@@ -192,28 +160,15 @@ pub mod test_helpers {
             ))
             .await;
 
-        assert_eq!(email.to_string(), result.unwrap().email);
+        assert_eq!(email, result.unwrap().email);
     }
 
     #[tokio::test]
     async fn test_login_failure() {
         let email = "adrian@email.com";
         let password = "password";
-        let register_result = Arc::new(Mutex::new(Err(RegisterUserError::Unknown(anyhow!(
-            "register result error"
-        )))));
-        let auth_result = Arc::new(Mutex::new(Err(AuthorizationError::Unknown(anyhow!(
-            "auth result error"
-        )))));
-        let login_result = Arc::new(Mutex::new(Err(LoginUserError::Unknown(anyhow!(
-            "login result error"
-        )))));
 
-        let mock_repo = MockAuthRepository {
-            register_result,
-            auth_result,
-            login_result,
-        };
+        let mock_repo = MockAuthRepository::failure();
 
         let result = mock_repo
             .login(&LoginUserRequest::new(
