@@ -325,4 +325,31 @@ mod test {
 
         assert!(result.is_err())
     }
+
+    #[tokio::test]
+    async fn test_auth_db_failure() {
+        let config = Config::init();
+
+        let access_token_details = generate_jwt(
+            uuid::Uuid::new_v4(),
+            config.access_token_max_age,
+            &config.access_token_private_key,
+        )
+        .unwrap();
+
+        let repo = MockAuthRepository::failure();
+        let cache = MockCacheRepository::success();
+
+        let state = Service {
+            repo,
+            cache,
+            config,
+        };
+
+        let result = state
+            .auth(&AuthRequest::new(access_token_details.token.unwrap()))
+            .await;
+
+        assert!(result.is_err())
+    }
 }
