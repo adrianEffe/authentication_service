@@ -101,3 +101,48 @@ where
         Ok(LogoutResponse::new("User logged out"))
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::{
+        domain::{
+            auth_service::AuthService,
+            model::{
+                register_user::{HashedUserPassword, RegisterUserRequest},
+                user_email::UserEmail,
+                user_password::UserPassword,
+            },
+        },
+        helper::config::Config,
+        repositories::test_helpers::{
+            mock_auth_repository::test_helpers::MockAuthRepository,
+            mock_cache_repository::test_helpers::MockCacheRepository,
+        },
+        service::Service,
+    };
+
+    #[tokio::test]
+    async fn test_register_success() {
+        let email = "adrian@email.com";
+        let password = "password";
+
+        let repo = MockAuthRepository::success(email, password);
+        let cache = MockCacheRepository::success();
+        let config = Config::init();
+
+        let state = Service {
+            repo,
+            cache,
+            config,
+        };
+
+        let result = state
+            .register(&RegisterUserRequest::new(
+                UserEmail::new(email).unwrap(),
+                HashedUserPassword::new(UserPassword::new(password).unwrap()).unwrap(),
+            ))
+            .await;
+
+        assert_eq!(result.unwrap().email, email)
+    }
+}
