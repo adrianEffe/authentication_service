@@ -97,9 +97,10 @@ mod test {
                 UserEmail::new(email).unwrap(),
                 UserPassword::new(password).unwrap(),
             ))
-            .await;
+            .await
+            .unwrap();
 
-        assert!(result.is_ok())
+        assert!(!result.access_token.is_empty())
     }
 
     #[tokio::test]

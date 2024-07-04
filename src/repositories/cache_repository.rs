@@ -2,7 +2,11 @@ use anyhow::anyhow;
 use redis::{AsyncCommands, Client};
 
 use crate::domain::{
-    model::{cache_errors::CacheOperationError, token::TokenDetails, token_uuid::TokenUuid},
+    model::{
+        cache_errors::CacheOperationError,
+        token::{CacheToken, TokenDetails},
+        token_uuid::TokenUuid,
+    },
     repositories::cache_repository::CacheRepository,
 };
 
@@ -29,10 +33,29 @@ impl RedisCache {
 }
 
 impl CacheRepository for RedisCache {
-    async fn save_token_data(
+    async fn save_token_data(&self, token: &CacheToken) -> Result<(), CacheOperationError> {
+        let mut redis_client = self
+            .client
+            .get_multiplexed_async_connection()
+            .await
+            .map_err(|e| anyhow!(e).context("Failed to get redis connection"))?;
+
+        redis_client
+            .set_ex(
+                token.token_uuid.to_string(),
+                token.user_id.to_string(),
+                (token.max_age * 60) as u64,
+            )
+            .await
+            .map_err(|_| CacheOperationError::Save)?;
+
+        Ok(())
+    }
+
+    async fn save_tokens_data(
         &self,
-        token_details: &TokenDetails,
-        max_age: i64,
+        access_token: &CacheToken,
+        refresh_token: &CacheToken,
     ) -> Result<(), CacheOperationError> {
         let mut redis_client = self
             .client
@@ -42,9 +65,18 @@ impl CacheRepository for RedisCache {
 
         redis_client
             .set_ex(
-                token_details.token_uuid.to_string(),
-                token_details.user_id.to_string(),
-                (max_age * 60) as u64,
+                access_token.token_uuid.to_string(),
+                access_token.user_id.to_string(),
+                (access_token.max_age * 60) as u64,
+            )
+            .await
+            .map_err(|_| CacheOperationError::Save)?;
+
+        redis_client
+            .set_ex(
+                refresh_token.token_uuid.to_string(),
+                refresh_token.user_id.to_string(),
+                (refresh_token.max_age * 60) as u64,
             )
             .await
             .map_err(|_| CacheOperationError::Save)?;

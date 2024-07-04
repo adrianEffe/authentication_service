@@ -6,23 +6,35 @@ pub mod test_helpers {
     use tokio::sync::Mutex;
 
     use crate::domain::{
-        model::{cache_errors::CacheOperationError, token::TokenDetails, token_uuid::TokenUuid},
+        model::{
+            cache_errors::CacheOperationError,
+            token::{CacheToken, TokenDetails},
+            token_uuid::TokenUuid,
+        },
         repositories::cache_repository::CacheRepository,
     };
 
     pub struct MockCacheRepository {
         pub save_token_data_result: Arc<Mutex<Result<(), CacheOperationError>>>,
+        pub save_tokens_data_result: Arc<Mutex<Result<(), CacheOperationError>>>,
         pub verify_active_session_result: Arc<Mutex<Result<(), CacheOperationError>>>,
         pub delete_token_result: Arc<Mutex<Result<(), CacheOperationError>>>,
     }
 
     impl CacheRepository for MockCacheRepository {
-        async fn save_token_data(
-            &self,
-            _token_details: &TokenDetails,
-            _max_age: i64,
-        ) -> Result<(), CacheOperationError> {
+        async fn save_token_data(&self, _token: &CacheToken) -> Result<(), CacheOperationError> {
             let mut guard = self.save_token_data_result.lock().await;
+            let mut result = Err(CacheOperationError::Unknown(anyhow!("substitute error")));
+            mem::swap(guard.deref_mut(), &mut result);
+            result
+        }
+
+        async fn save_tokens_data(
+            &self,
+            _access_token: &crate::domain::model::token::CacheToken,
+            _refresh_token: &crate::domain::model::token::CacheToken,
+        ) -> Result<(), CacheOperationError> {
+            let mut guard = self.save_tokens_data_result.lock().await;
             let mut result = Err(CacheOperationError::Unknown(anyhow!("substitute error")));
             mem::swap(guard.deref_mut(), &mut result);
             result
@@ -49,11 +61,13 @@ pub mod test_helpers {
     impl MockCacheRepository {
         pub fn success() -> MockCacheRepository {
             let save_token_data_result = Arc::new(Mutex::new(Ok(())));
+            let save_tokens_data_result = Arc::new(Mutex::new(Ok(())));
             let verify_active_session_result = Arc::new(Mutex::new(Ok(())));
             let delete_token_result = Arc::new(Mutex::new(Ok(())));
 
             MockCacheRepository {
                 save_token_data_result,
+                save_tokens_data_result,
                 verify_active_session_result,
                 delete_token_result,
             }
@@ -62,6 +76,9 @@ pub mod test_helpers {
         pub fn failure() -> MockCacheRepository {
             let save_token_data_result = Arc::new(Mutex::new(Err(CacheOperationError::Unknown(
                 anyhow!("save token data result error"),
+            ))));
+            let save_tokens_data_result = Arc::new(Mutex::new(Err(CacheOperationError::Unknown(
+                anyhow!("save tokens data result error"),
             ))));
             let verify_active_session_result = Arc::new(Mutex::new(Err(
                 CacheOperationError::Unknown(anyhow!("verify active session result error")),
@@ -72,6 +89,7 @@ pub mod test_helpers {
 
             MockCacheRepository {
                 save_token_data_result,
+                save_tokens_data_result,
                 verify_active_session_result,
                 delete_token_result,
             }
@@ -90,7 +108,17 @@ pub mod test_helpers {
 
         let mock_repo = MockCacheRepository::success();
 
-        let result = mock_repo.save_token_data(&token, 10).await;
+        let result = mock_repo
+            .save_token_data(&CacheToken::new(uuid, uuid, 10))
+            .await;
+        assert!(result.is_ok());
+
+        let result = mock_repo
+            .save_tokens_data(
+                &CacheToken::new(uuid, uuid, 10),
+                &CacheToken::new(uuid, uuid, 20),
+            )
+            .await;
         assert!(result.is_ok());
 
         let result = mock_repo.verify_active_session(&token).await;
@@ -112,7 +140,17 @@ pub mod test_helpers {
 
         let mock_repo = MockCacheRepository::failure();
 
-        let result = mock_repo.save_token_data(&token, 10).await;
+        let result = mock_repo
+            .save_token_data(&CacheToken::new(uuid, uuid, 10))
+            .await;
+        assert!(result.is_err());
+
+        let result = mock_repo
+            .save_tokens_data(
+                &CacheToken::new(uuid, uuid, 10),
+                &CacheToken::new(uuid, uuid, 20),
+            )
+            .await;
         assert!(result.is_err());
 
         let result = mock_repo.verify_active_session(&token).await;
