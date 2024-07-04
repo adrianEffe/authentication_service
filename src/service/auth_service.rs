@@ -122,7 +122,7 @@ mod test {
             mock_auth_repository::test_helpers::MockAuthRepository,
             mock_cache_repository::test_helpers::MockCacheRepository,
         },
-        service::Service,
+        service::auth_service::Service,
     };
 
     #[tokio::test]
