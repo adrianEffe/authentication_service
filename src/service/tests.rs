@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod test {
+    use dotenv::dotenv;
+
     use crate::{
         api::utils::{jwt::generate_jwt, password_hasher::hash_password},
         domain::{
@@ -28,6 +30,7 @@ mod test {
 
         let repo = MockAuthRepository::success(email, password);
         let cache = MockCacheRepository::success();
+        dotenv().ok();
         let config = Config::init();
 
         let state = Service {
@@ -53,6 +56,7 @@ mod test {
 
         let repo = MockAuthRepository::failure();
         let cache = MockCacheRepository::failure();
+        dotenv().ok();
         let config = Config::init();
 
         let state = Service {
@@ -79,6 +83,7 @@ mod test {
 
         let repo = MockAuthRepository::success(email, &hashed_password);
         let cache = MockCacheRepository::success();
+        dotenv().ok();
         let config = Config::init();
 
         let state = Service {
@@ -104,6 +109,7 @@ mod test {
 
         let repo = MockAuthRepository::success(email, bad_password);
         let cache = MockCacheRepository::success();
+        dotenv().ok();
         let config = Config::init();
 
         let state = Service {
@@ -129,6 +135,7 @@ mod test {
 
         let repo = MockAuthRepository::failure();
         let cache = MockCacheRepository::success();
+        dotenv().ok();
         let config = Config::init();
 
         let state = Service {
@@ -154,6 +161,7 @@ mod test {
 
         let repo = MockAuthRepository::success(email, password);
         let cache = MockCacheRepository::failure();
+        dotenv().ok();
         let config = Config::init();
 
         let state = Service {
@@ -176,6 +184,7 @@ mod test {
     async fn test_auth_success() {
         let email = "adrian@email.com";
         let password = "password";
+        dotenv().ok();
         let config = Config::init();
 
         let access_token_details = generate_jwt(
@@ -208,6 +217,7 @@ mod test {
 
         let repo = MockAuthRepository::success(email, password);
         let cache = MockCacheRepository::success();
+        dotenv().ok();
         let config = Config::init();
 
         let state = Service {
@@ -225,6 +235,7 @@ mod test {
 
     #[tokio::test]
     async fn test_auth_db_failure() {
+        dotenv().ok();
         let config = Config::init();
 
         let access_token_details = generate_jwt(
@@ -254,6 +265,7 @@ mod test {
     async fn test_auth_cache_failure() {
         let email = "adrian@email.com";
         let password = "password";
+        dotenv().ok();
         let config = Config::init();
 
         let access_token_details = generate_jwt(
@@ -283,6 +295,7 @@ mod test {
     async fn test_logout_success() {
         let email = "adrian@email.com";
         let password = "password";
+        dotenv().ok();
         let config = Config::init();
 
         let repo = MockAuthRepository::success(email, password);
@@ -305,6 +318,7 @@ mod test {
     async fn test_logout_cache_failure() {
         let email = "adrian@email.com";
         let password = "password";
+        dotenv().ok();
         let config = Config::init();
 
         let repo = MockAuthRepository::success(email, password);
@@ -325,6 +339,7 @@ mod test {
 
     #[tokio::test]
     async fn test_logout_db_failure() {
+        dotenv().ok();
         let config = Config::init();
 
         let repo = MockAuthRepository::failure();
