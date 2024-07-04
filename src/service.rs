@@ -111,6 +111,7 @@ mod test {
             model::{
                 auth::AuthRequest,
                 login_user::LoginUserRequest,
+                logout::LogoutRequest,
                 register_user::{HashedUserPassword, RegisterUserRequest},
                 user_email::UserEmail,
                 user_password::UserPassword,
@@ -380,5 +381,27 @@ mod test {
             .await;
 
         assert!(result.is_err())
+    }
+
+    #[tokio::test]
+    async fn test_logout_success() {
+        let email = "adrian@email.com";
+        let password = "password";
+        let config = Config::init();
+
+        let repo = MockAuthRepository::success(email, password);
+        let cache = MockCacheRepository::success();
+
+        let state = Service {
+            repo,
+            cache,
+            config,
+        };
+
+        let result = state
+            .logout(&LogoutRequest::new(uuid::Uuid::new_v4()))
+            .await;
+
+        assert!(result.is_ok())
     }
 }
