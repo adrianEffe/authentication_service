@@ -1,8 +1,13 @@
 use crate::{
-    api::model::{api_error::ApiError, api_response::ApiResponse},
-    api::schemas::login_user::LoginUserSchema,
+    api::{
+        model::{api_error::ApiError, api_response::ApiResponse},
+        schemas::login_user::LoginUserSchema,
+    },
     application::AppState,
-    domain::{auth_service::AuthService, model::login_user::LoginUserError},
+    domain::{
+        auth_service::AuthService,
+        model::{login_response::LoginResponse, login_user::LoginUserError},
+    },
 };
 use anyhow::anyhow;
 use axum::{
@@ -25,11 +30,7 @@ pub async fn login_handler<AS: AuthService>(
         .await
         .map_err(ApiError::from)?;
 
-    let headers = set_cookies_in_header(
-        &login_response.access_token,
-        login_response.access_token_max_age,
-    )
-    .map_err(|e| {
+    let headers = set_cookies_in_header(&login_response).map_err(|e| {
         ApiError::from(LoginUserError::Unknown(
             anyhow!(e).context("Failed to set cookies in header"),
         ))
@@ -41,10 +42,18 @@ pub async fn login_handler<AS: AuthService>(
     Ok(response)
 }
 
-fn set_cookies_in_header(access_token: &str, max_age: i64) -> anyhow::Result<HeaderMap> {
-    let access_cookie = Cookie::build(("access_token", access_token))
+fn set_cookies_in_header(details: &LoginResponse) -> anyhow::Result<HeaderMap> {
+    let access_cookie = Cookie::build(("access_token", details.access_token.to_string()))
         .path("/")
-        .max_age(time::Duration::minutes(max_age))
+        .max_age(time::Duration::minutes(details.access_token_max_age))
+        .same_site(SameSite::Lax)
+        .http_only(true)
+        .to_string()
+        .parse()?;
+
+    let refresh_cookie = Cookie::build(("refresh_token", details.refresh_token.to_string()))
+        .path("/")
+        .max_age(time::Duration::minutes(details.refresh_token_max_age))
         .same_site(SameSite::Lax)
         .http_only(true)
         .to_string()
@@ -52,7 +61,7 @@ fn set_cookies_in_header(access_token: &str, max_age: i64) -> anyhow::Result<Hea
 
     let logged_in_cookie = Cookie::build(("logged_in", "true"))
         .path("/")
-        .max_age(time::Duration::minutes(max_age))
+        .max_age(time::Duration::minutes(details.access_token_max_age))
         .same_site(SameSite::Lax)
         .http_only(false)
         .to_string()
@@ -60,6 +69,7 @@ fn set_cookies_in_header(access_token: &str, max_age: i64) -> anyhow::Result<Hea
 
     let mut headers = HeaderMap::new();
     headers.append(header::SET_COOKIE, access_cookie);
+    headers.append(header::SET_COOKIE, refresh_cookie);
     headers.append(header::SET_COOKIE, logged_in_cookie);
     Ok(headers)
 }

@@ -1,14 +1,21 @@
 use std::future::Future;
 
 use crate::domain::model::{
-    cache_errors::CacheOperationError, token::TokenDetails, token_uuid::TokenUuid,
+    cache_errors::CacheOperationError,
+    token::{CacheToken, TokenDetails},
+    token_uuid::TokenUuid,
 };
 
 pub trait CacheRepository: Send + Sync + 'static {
     fn save_token_data(
         &self,
-        token_details: &TokenDetails,
-        max_age: i64,
+        token: &CacheToken,
+    ) -> impl Future<Output = Result<(), CacheOperationError>> + Send;
+
+    fn save_tokens_data(
+        &self,
+        access_token: &CacheToken,
+        refresh_token: &CacheToken,
     ) -> impl Future<Output = Result<(), CacheOperationError>> + Send;
 
     fn verify_active_session(

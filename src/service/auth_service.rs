@@ -14,6 +14,7 @@ use crate::{
             login_user::{LoginUserError, LoginUserRequest},
             logout::{LogoutRequest, LogoutResponse},
             register_user::{RegisterUserError, RegisterUserRequest},
+            token::CacheToken,
             user::FilteredUser,
             user_id::UserId,
         },
@@ -59,18 +60,41 @@ where
             &self.config.access_token_private_key,
         )?;
 
+        let refresh_token_details = generate_jwt(
+            user.id,
+            self.config.refresh_token_max_age,
+            &self.config.refresh_token_private_key,
+        )?;
+
         self.cache
-            .save_token_data(&access_token_details, self.config.access_token_max_age)
+            .save_tokens_data(
+                &CacheToken::new(
+                    access_token_details.token_uuid,
+                    access_token_details.user_id,
+                    self.config.access_token_max_age,
+                ),
+                &CacheToken::new(
+                    refresh_token_details.token_uuid,
+                    refresh_token_details.user_id,
+                    self.config.refresh_token_max_age,
+                ),
+            )
             .await
-            .map_err(|e| anyhow!(e).context("Failed redis operation"))?;
+            .map_err(|e| anyhow!(e).context("Failed redis operation while saving tokens"))?;
 
         let access_token = access_token_details
             .token
-            .ok_or_else(|| anyhow!("Failed to generate token"))?;
+            .ok_or_else(|| anyhow!("Failed to generate access token"))?;
+
+        let refresh_token = refresh_token_details
+            .token
+            .ok_or_else(|| anyhow!("Failed to generate refresh token"))?;
 
         Ok(LoginResponse {
             access_token,
             access_token_max_age: self.config.access_token_max_age,
+            refresh_token,
+            refresh_token_max_age: self.config.refresh_token_max_age,
         })
     }
 
