@@ -74,4 +74,39 @@ pub mod test_helpers {
         let result = mock_repo.delete_token(&TokenUuid::new(uuid)).await;
         assert!(result.is_ok());
     }
+
+    #[tokio::test]
+    async fn test_cache_repository_failure_cases() {
+        let uuid = uuid::Uuid::new_v4();
+        let token = TokenDetails {
+            token: None,
+            token_uuid: uuid,
+            user_id: uuid,
+            expires_in: None,
+        };
+        let save_token_data_result = Arc::new(Mutex::new(Err(CacheOperationError::Unknown(
+            anyhow!("save token data result error"),
+        ))));
+        let verify_active_session_result = Arc::new(Mutex::new(Err(CacheOperationError::Unknown(
+            anyhow!("verify active session result error"),
+        ))));
+        let delete_token_result = Arc::new(Mutex::new(Err(CacheOperationError::Unknown(anyhow!(
+            "delete token result error"
+        )))));
+
+        let mock_repo = MockCacheRepository {
+            save_token_data_result,
+            verify_active_session_result,
+            delete_token_result,
+        };
+
+        let result = mock_repo.save_token_data(&token, 10).await;
+        assert!(result.is_err());
+
+        let result = mock_repo.verify_active_session(&token).await;
+        assert!(result.is_err());
+
+        let result = mock_repo.delete_token(&TokenUuid::new(uuid)).await;
+        assert!(result.is_err());
+    }
 }
