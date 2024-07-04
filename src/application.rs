@@ -1,7 +1,7 @@
 use crate::domain::auth_service::AuthService;
 use crate::repositories::auth_repository::PostgresDB;
 use crate::repositories::cache_repository::RedisCache;
-use crate::service::Service;
+use crate::service::auth_service::Service;
 use crate::{
     api::{
         endpoints::{
