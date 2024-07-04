@@ -47,7 +47,7 @@ pub mod test_helpers {
     }
 
     #[tokio::test]
-    async fn test_save_token_data_success() {
+    async fn test_cache_repository_success_cases() {
         let uuid = uuid::Uuid::new_v4();
         let token = TokenDetails {
             token: None,
@@ -66,7 +66,12 @@ pub mod test_helpers {
         };
 
         let result = mock_repo.save_token_data(&token, 10).await;
+        assert!(result.is_ok());
 
-        assert!(result.is_ok())
+        let result = mock_repo.verify_active_session(&token).await;
+        assert!(result.is_ok());
+
+        let result = mock_repo.delete_token(&TokenUuid::new(uuid)).await;
+        assert!(result.is_ok());
     }
 }
