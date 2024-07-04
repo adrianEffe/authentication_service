@@ -47,6 +47,10 @@ jobs:
           echo "ACCESS_TOKEN_PUBLIC_KEY=${{ secrets.ACCESS_TOKEN_PUBLIC_KEY }}" >> .env
           echo "ACCESS_TOKEN_EXPIRES_IN=${{ secrets.ACCESS_TOKEN_EXPIRES_IN }}" >> .env
           echo "ACCESS_TOKEN_MAXAGE=${{ secrets.ACCESS_TOKEN_MAXAGE }}" >> .env
+          echo "REFRESH_TOKEN_PRIVATE_KEY=${{ secrets.REFRESH_TOKEN_PRIVATE_KEY }}" >> .env
+          echo "REFRESH_TOKEN_PUBLIC_KEY=${{ secrets.REFRESH_TOKEN_PUBLIC_KEY }}" >> .env
+          echo "REFRESH_TOKEN_EXPIRES_IN=${{ secrets.REFRESH_TOKEN_EXPIRES_IN }}" >> .env
+          echo "REFRESH_TOKEN_MAXAGE=${{ secrets.REFRESH_TOKEN_MAXAGE }}" >> .env
 
       - name: Install the Rust toolchain
         uses: dtolnay/rust-toolchain@stable
