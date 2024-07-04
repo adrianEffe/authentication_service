@@ -145,4 +145,29 @@ mod test {
 
         assert_eq!(result.unwrap().email, email)
     }
+
+    #[tokio::test]
+    async fn test_register_failure() {
+        let email = "adrian@email.com";
+        let password = "password";
+
+        let repo = MockAuthRepository::failure();
+        let cache = MockCacheRepository::failure();
+        let config = Config::init();
+
+        let state = Service {
+            repo,
+            cache,
+            config,
+        };
+
+        let result = state
+            .register(&RegisterUserRequest::new(
+                UserEmail::new(email).unwrap(),
+                HashedUserPassword::new(UserPassword::new(password).unwrap()).unwrap(),
+            ))
+            .await;
+
+        assert!(result.is_err())
+    }
 }
