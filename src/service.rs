@@ -198,4 +198,29 @@ mod test {
 
         assert!(result.is_ok())
     }
+
+    #[tokio::test]
+    async fn test_login_wrong_password_failure() {
+        let email = "adrian@email.com";
+        let bad_password = "password";
+
+        let repo = MockAuthRepository::success(email, bad_password);
+        let cache = MockCacheRepository::success();
+        let config = Config::init();
+
+        let state = Service {
+            repo,
+            cache,
+            config,
+        };
+
+        let result = state
+            .login(&LoginUserRequest::new(
+                UserEmail::new(email).unwrap(),
+                UserPassword::new(bad_password).unwrap(),
+            ))
+            .await;
+
+        assert!(result.is_err())
+    }
 }
