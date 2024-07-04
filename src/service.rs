@@ -200,7 +200,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn test_login_wrong_password_failure() {
+    async fn test_login_invalid_password_failure() {
         let email = "adrian@email.com";
         let bad_password = "password";
 
@@ -218,6 +218,56 @@ mod test {
             .login(&LoginUserRequest::new(
                 UserEmail::new(email).unwrap(),
                 UserPassword::new(bad_password).unwrap(),
+            ))
+            .await;
+
+        assert!(result.is_err())
+    }
+
+    #[tokio::test]
+    async fn test_login_database_failure() {
+        let email = "adrian@email.com";
+        let password = "password";
+
+        let repo = MockAuthRepository::failure();
+        let cache = MockCacheRepository::success();
+        let config = Config::init();
+
+        let state = Service {
+            repo,
+            cache,
+            config,
+        };
+
+        let result = state
+            .login(&LoginUserRequest::new(
+                UserEmail::new(email).unwrap(),
+                UserPassword::new(password).unwrap(),
+            ))
+            .await;
+
+        assert!(result.is_err())
+    }
+
+    #[tokio::test]
+    async fn test_login_cache_failure() {
+        let email = "adrian@email.com";
+        let password = "password";
+
+        let repo = MockAuthRepository::success(email, password);
+        let cache = MockCacheRepository::failure();
+        let config = Config::init();
+
+        let state = Service {
+            repo,
+            cache,
+            config,
+        };
+
+        let result = state
+            .login(&LoginUserRequest::new(
+                UserEmail::new(email).unwrap(),
+                UserPassword::new(password).unwrap(),
             ))
             .await;
 
