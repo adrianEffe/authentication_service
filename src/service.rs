@@ -105,9 +105,11 @@ where
 #[cfg(test)]
 mod test {
     use crate::{
+        api::utils::password_hasher::hash_password,
         domain::{
             auth_service::AuthService,
             model::{
+                login_user::LoginUserRequest,
                 register_user::{HashedUserPassword, RegisterUserRequest},
                 user_email::UserEmail,
                 user_password::UserPassword,
@@ -169,5 +171,31 @@ mod test {
             .await;
 
         assert!(result.is_err())
+    }
+
+    #[tokio::test]
+    async fn test_login_success() {
+        let email = "adrian@email.com";
+        let password = "password";
+        let hashed_password = hash_password(password).unwrap();
+
+        let repo = MockAuthRepository::success(email, &hashed_password);
+        let cache = MockCacheRepository::success();
+        let config = Config::init();
+
+        let state = Service {
+            repo,
+            cache,
+            config,
+        };
+
+        let result = state
+            .login(&LoginUserRequest::new(
+                UserEmail::new(email).unwrap(),
+                UserPassword::new(password).unwrap(),
+            ))
+            .await;
+
+        assert!(result.is_ok())
     }
 }
