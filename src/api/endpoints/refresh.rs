@@ -8,7 +8,9 @@ use axum::{
 use axum_extra::extract::CookieJar;
 
 use crate::{
-    api::model::api_error::ApiError, application::AppState, domain::auth_service::AuthService,
+    api::model::api_error::ApiError,
+    application::AppState,
+    domain::{auth_service::AuthService, model::refresh_token::RefreshRequest},
 };
 
 pub async fn refresh_access_token_handler<AS: AuthService>(
@@ -18,6 +20,9 @@ pub async fn refresh_access_token_handler<AS: AuthService>(
     let refresh_token = extract_refresh_token(cookie_jar)
         // .map_err(RefreshTokenError::MissingCredentials)
         .unwrap(); //TODO: //handle error
+    let domain_request = RefreshRequest::new(refresh_token);
+
+    let access_token = state.auth_service.refresh(&domain_request).await;
 
     Ok(Response::new("todo".to_string()))
 }
