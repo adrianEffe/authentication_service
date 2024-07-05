@@ -143,6 +143,21 @@ where
             .fetch_user_by_id(&UserId::new(refresh_token_details.user_id))
             .await
             .unwrap(); // TODO: Fix errors for repo layer and handle here
+
+        let access_token_details = generate_jwt(
+            user.id,
+            self.config.access_token_max_age,
+            &self.config.access_token_private_key,
+        )?;
+
+        self.cache
+            .save_token_data(&CacheToken::new(
+                access_token_details.token_uuid,
+                access_token_details.user_id,
+                self.config.access_token_max_age,
+            ))
+            .await?;
+
         todo!()
     }
 }
