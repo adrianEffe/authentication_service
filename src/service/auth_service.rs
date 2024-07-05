@@ -13,6 +13,7 @@ use crate::{
             login_response::LoginResponse,
             login_user::{LoginUserError, LoginUserRequest},
             logout::{LogoutRequest, LogoutResponse},
+            refresh_token::{RefreshRequest, RefreshResponse, RefreshTokenError},
             register_user::{RegisterUserError, RegisterUserRequest},
             token::CacheToken,
             user::FilteredUser,
@@ -123,5 +124,12 @@ where
     async fn logout(&self, request: &LogoutRequest) -> Result<LogoutResponse, AuthorizationError> {
         self.cache.delete_token(request.get_uuid()).await?;
         Ok(LogoutResponse::new("User logged out"))
+    }
+
+    async fn refresh(
+        &self,
+        request: &RefreshRequest,
+    ) -> Result<RefreshResponse, RefreshTokenError> {
+        todo!()
     }
 }

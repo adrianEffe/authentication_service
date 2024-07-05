@@ -4,6 +4,7 @@ pub mod cache_errors;
 pub mod login_response;
 pub mod login_user;
 pub mod logout;
+pub mod refresh_token;
 pub mod register_user;
 pub mod token;
 pub mod token_uuid;
