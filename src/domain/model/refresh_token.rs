@@ -24,7 +24,10 @@ impl RefreshRequest {
 struct Token(String);
 
 #[derive(Debug)]
-pub struct RefreshResponse;
+pub struct RefreshResponse {
+    pub access_token: String,
+    pub access_token_max_age: i64,
+}
 
 #[derive(Debug, Error)]
 pub enum RefreshTokenError {

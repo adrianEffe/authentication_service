@@ -158,6 +158,13 @@ where
             ))
             .await?;
 
-        todo!()
+        let access_token = access_token_details
+            .token
+            .ok_or_else(|| anyhow!("Failed to generate access token"))?;
+
+        Ok(RefreshResponse {
+            access_token,
+            access_token_max_age: self.config.access_token_max_age,
+        })
     }
 }
