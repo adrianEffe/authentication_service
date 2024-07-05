@@ -1,5 +1,6 @@
 pub mod auth;
 pub mod auth_middleware;
+pub mod auth_repo_errors;
 pub mod cache_errors;
 pub mod login_response;
 pub mod login_user;
