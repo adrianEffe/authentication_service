@@ -1,7 +1,9 @@
 use crate::api::utils::password_hasher;
 
-use super::{user_email::UserEmail, user_password::UserPassword};
-use anyhow::Result;
+use super::{
+    auth_repo_errors::AuthRepositoryError, user_email::UserEmail, user_password::UserPassword,
+};
+use anyhow::{anyhow, Result};
 use thiserror::Error;
 
 #[derive(Debug)]
@@ -25,6 +27,15 @@ pub enum RegisterUserError {
     Duplicate { email: UserEmail },
     #[error(transparent)]
     Unknown(#[from] anyhow::Error),
+}
+
+impl From<AuthRepositoryError> for RegisterUserError {
+    fn from(value: AuthRepositoryError) -> Self {
+        match value {
+            AuthRepositoryError::Duplicate { email } => RegisterUserError::Duplicate { email },
+            _ => RegisterUserError::Unknown(anyhow!("Internal server error")),
+        }
+    }
 }
 
 #[derive(Debug)]

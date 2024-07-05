@@ -44,7 +44,10 @@ where
         &self,
         request: &RegisterUserRequest,
     ) -> Result<FilteredUser, RegisterUserError> {
-        self.repo.register(request).await
+        self.repo
+            .register(request)
+            .await
+            .map_err(RegisterUserError::from)
     }
 
     async fn login(&self, request: &LoginUserRequest) -> Result<LoginResponse, LoginUserError> {

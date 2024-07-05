@@ -3,7 +3,7 @@ use thiserror::Error;
 use super::user_email::UserEmail;
 
 #[derive(Debug, Error)]
-pub enum AuthRepoErrors {
+pub enum AuthRepositoryError {
     #[error("User with email {email} already exists")]
     Duplicate { email: UserEmail },
     #[error("Database error: {reason}")]
