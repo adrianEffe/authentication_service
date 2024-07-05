@@ -131,7 +131,11 @@ where
         request: &RefreshRequest,
     ) -> Result<RefreshResponse, RefreshTokenError> {
         let refresh_token_details =
-            verify_jwt(&self.config.refresh_token_public_key, request.get_token()).unwrap(); //TODO:hanfle error
+            verify_jwt(&self.config.refresh_token_public_key, request.get_token()).map_err(
+                |_| RefreshTokenError::InvalidCredentials {
+                    reason: "Refresh token no longer valid".to_string(),
+                },
+            )?;
 
         self.cache
             .verify_active_session(&refresh_token_details)

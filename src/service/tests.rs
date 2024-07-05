@@ -387,4 +387,28 @@ mod test {
 
         assert!(!result.access_token.is_empty());
     }
+
+    #[tokio::test]
+    async fn test_refresh_token_invalid_token_failure() {
+        dotenv().ok();
+        let config = Config::init();
+
+        let email = "adrian@email.com";
+        let password = "password";
+
+        let repo = MockAuthRepository::success(email, password);
+        let cache = MockCacheRepository::success();
+
+        let state = Service {
+            repo,
+            cache,
+            config,
+        };
+
+        let result = state
+            .refresh(&RefreshRequest::new("invalid_token".to_string()))
+            .await;
+
+        assert!(result.is_err())
+    }
 }
