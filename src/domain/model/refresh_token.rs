@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use thiserror::Error;
 
-use super::cache_errors::CacheOperationError;
+use super::{auth_repo_errors::AuthRepositoryError, cache_errors::CacheOperationError};
 
 #[derive(Debug)]
 pub struct RefreshRequest {
@@ -39,13 +39,24 @@ pub enum RefreshTokenError {
     Unknown(#[from] anyhow::Error),
 }
 
+impl From<AuthRepositoryError> for RefreshTokenError {
+    fn from(value: AuthRepositoryError) -> Self {
+        match value {
+            AuthRepositoryError::InvalidCredentials { reason } => {
+                RefreshTokenError::InvalidCredentials { reason }
+            }
+            _ => RefreshTokenError::Unknown(anyhow!("Internal Server Error")),
+        }
+    }
+}
+
 impl From<CacheOperationError> for RefreshTokenError {
     fn from(value: CacheOperationError) -> Self {
         match value {
             CacheOperationError::Invalid { reason } => {
                 RefreshTokenError::InvalidCredentials { reason }
             }
-            _ => RefreshTokenError::Unknown(anyhow!("Internal server error")),
+            _ => RefreshTokenError::Unknown(anyhow!("Internal Server Error")),
         }
     }
 }

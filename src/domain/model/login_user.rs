@@ -30,7 +30,7 @@ impl From<AuthRepositoryError> for LoginUserError {
             AuthRepositoryError::InvalidCredentials { reason: _ } => {
                 LoginUserError::InvalidCredentials
             }
-            _ => LoginUserError::Unknown(anyhow!("Internal Server Error".to_string())),
+            _ => LoginUserError::Unknown(anyhow!("Internal Server Error")),
         }
     }
 }
