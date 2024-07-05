@@ -10,6 +10,7 @@ mod test {
                 auth::AuthRequest,
                 login_user::LoginUserRequest,
                 logout::LogoutRequest,
+                refresh_token::RefreshRequest,
                 register_user::{HashedUserPassword, RegisterUserRequest},
                 user_email::UserEmail,
                 user_password::UserPassword,
@@ -357,5 +358,33 @@ mod test {
             .await;
 
         assert!(result.is_ok())
+    }
+
+    #[tokio::test]
+    async fn test_refresh_token_success() {
+        dotenv().ok();
+        let config = Config::init();
+
+        let email = "adrian@email.com";
+        let password = "password";
+        let user_id = uuid::Uuid::new_v4();
+
+        let token = generate_jwt(user_id, 10, &config.refresh_token_private_key);
+
+        let repo = MockAuthRepository::success(email, password);
+        let cache = MockCacheRepository::success();
+
+        let state = Service {
+            repo,
+            cache,
+            config,
+        };
+
+        let result = state
+            .refresh(&RefreshRequest::new(token.unwrap().token.unwrap()))
+            .await
+            .unwrap();
+
+        assert!(!result.access_token.is_empty());
     }
 }
