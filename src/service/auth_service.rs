@@ -115,7 +115,7 @@ where
 
         let user = self
             .repo
-            .auth(&UserId::new(access_token_details.user_id))
+            .fetch_user_by_id(&UserId::new(access_token_details.user_id))
             .await?;
 
         Ok(AuthMiddleware::new(user, access_token_details.token_uuid))
@@ -138,7 +138,11 @@ where
             .await
             .map_err(RefreshTokenError::from)?;
 
-        // let user =
+        let user = self
+            .repo
+            .fetch_user_by_id(&UserId::new(refresh_token_details.user_id))
+            .await
+            .unwrap(); // TODO: Fix errors for repo layer and handle here
         todo!()
     }
 }

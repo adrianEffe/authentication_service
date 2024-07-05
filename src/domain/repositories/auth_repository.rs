@@ -18,7 +18,7 @@ pub trait AuthRepository: Send + Sync + 'static {
         request: &LoginUserRequest,
     ) -> impl Future<Output = Result<User, LoginUserError>> + Send;
 
-    fn auth(
+    fn fetch_user_by_id(
         &self,
         request: &UserId,
     ) -> impl Future<Output = Result<User, AuthorizationError>> + Send;

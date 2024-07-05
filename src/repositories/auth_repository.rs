@@ -57,7 +57,7 @@ impl AuthRepository for PostgresDB {
         self.fetch_user_by_email(&request.email).await
     }
 
-    async fn auth(&self, request: &UserId) -> Result<User, AuthorizationError> {
+    async fn fetch_user_by_id(&self, request: &UserId) -> Result<User, AuthorizationError> {
         self.fetch_user_by_id(request).await
     }
 }

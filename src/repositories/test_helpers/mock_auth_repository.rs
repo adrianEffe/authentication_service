@@ -37,7 +37,7 @@ pub mod test_helpers {
             result
         }
 
-        async fn auth(&self, _request: &UserId) -> Result<User, AuthorizationError> {
+        async fn fetch_user_by_id(&self, _request: &UserId) -> Result<User, AuthorizationError> {
             let mut guard = self.auth_result.lock().await;
             let mut result = Err(AuthorizationError::Unknown(anyhow!("substitute error")));
             mem::swap(guard.deref_mut(), &mut result);
@@ -129,7 +129,7 @@ pub mod test_helpers {
 
         let mock_repo = MockAuthRepository::success(email, password);
 
-        let result = mock_repo.auth(&user_id).await;
+        let result = mock_repo.fetch_user_by_id(&user_id).await;
 
         assert_eq!(email, &result.unwrap().email);
     }
@@ -141,7 +141,7 @@ pub mod test_helpers {
 
         let mock_repo = MockAuthRepository::failure();
 
-        let result = mock_repo.auth(&user_id).await;
+        let result = mock_repo.fetch_user_by_id(&user_id).await;
 
         assert!(result.is_err());
     }
