@@ -411,4 +411,25 @@ mod test {
 
         assert!(result.is_err())
     }
+
+    #[tokio::test]
+    async fn test_refresh_token_repo_failure() {
+        dotenv().ok();
+        let config = Config::init();
+
+        let repo = MockAuthRepository::failure();
+        let cache = MockCacheRepository::success();
+
+        let state = Service {
+            repo,
+            cache,
+            config,
+        };
+
+        let result = state
+            .refresh(&RefreshRequest::new("invalid_token".to_string()))
+            .await;
+
+        assert!(result.is_err())
+    }
 }
