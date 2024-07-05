@@ -1,6 +1,7 @@
 use crate::domain::model::{
     auth::AuthorizationError,
     login_user::LoginUserError,
+    refresh_token::RefreshTokenError,
     register_user::{PasswordHashingError, RegisterUserError},
     user_email::UserEmailEmptyError,
     user_password::UserPasswordEmptyError,
@@ -32,7 +33,7 @@ impl From<RegisterUserError> for ApiError {
             }
             RegisterUserError::Unknown(cause) => {
                 tracing::error!("{:?}\n{}", cause, cause.backtrace());
-                Self::InternalServerError("Internal server error".to_string())
+                Self::InternalServerError("Internal Server Error".to_string())
             }
         }
     }
@@ -46,8 +47,20 @@ impl From<AuthorizationError> for ApiError {
             }
             AuthorizationError::Unknown(cause) => {
                 tracing::error!("{:?}\n{}", cause, cause.backtrace());
-                Self::InternalServerError("Internal server error".to_string())
+                Self::InternalServerError("Internal Server Error".to_string())
             }
+        }
+    }
+}
+
+impl From<RefreshTokenError> for ApiError {
+    fn from(value: RefreshTokenError) -> ApiError {
+        match value {
+            RefreshTokenError::InvalidCredentials { reason } => ApiError::Unauthorized(reason),
+            RefreshTokenError::MissingCredentials => {
+                ApiError::Unauthorized("Missing credentials".to_string())
+            }
+            _ => ApiError::InternalServerError("Internal Server Error".to_string()),
         }
     }
 }
@@ -78,7 +91,7 @@ impl From<LoginUserError> for ApiError {
             }
             LoginUserError::Unknown(cause) => {
                 tracing::error!("{:?}\n{}", cause, cause.backtrace());
-                Self::InternalServerError("Internal server error".to_string())
+                Self::InternalServerError("Internal Server Error".to_string())
             }
         }
     }

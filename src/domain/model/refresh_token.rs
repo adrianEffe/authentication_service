@@ -1,4 +1,5 @@
 use anyhow::anyhow;
+use serde::Serialize;
 use thiserror::Error;
 
 use super::{auth_repo_errors::AuthRepositoryError, cache_errors::CacheOperationError};
@@ -23,7 +24,7 @@ impl RefreshRequest {
 #[derive(Debug)]
 struct Token(String);
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct RefreshResponse {
     pub access_token: String,
     pub access_token_max_age: i64,

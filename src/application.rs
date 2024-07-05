@@ -1,3 +1,4 @@
+use crate::api::endpoints::refresh::refresh_access_token_handler;
 use crate::domain::auth_service::AuthService;
 use crate::repositories::auth_repository::PostgresDB;
 use crate::repositories::cache_repository::RedisCache;
@@ -50,6 +51,7 @@ pub async fn run(listener: TcpListener, config: Config) -> Result<()> {
 fn app<AS: AuthService>(app_state: Arc<AppState<AS>>) -> Router {
     Router::new()
         .route("/api/healthcheck", get(healthcheck))
+        .route("/api/refresh", get(refresh_access_token_handler))
         .route("/api/register", post(register_handler))
         .route("/api/login", post(login_handler))
         .route(
