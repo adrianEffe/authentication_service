@@ -1,4 +1,7 @@
+use anyhow::anyhow;
 use thiserror::Error;
+
+use super::cache_errors::CacheOperationError;
 
 #[derive(Debug)]
 pub struct RefreshRequest {
@@ -6,13 +9,13 @@ pub struct RefreshRequest {
 }
 
 impl RefreshRequest {
-    fn new(token: String) -> RefreshRequest {
+    pub fn new(token: String) -> RefreshRequest {
         RefreshRequest {
             token: Token(token),
         }
     }
 
-    fn get_token(&self) -> &str {
+    pub fn get_token(&self) -> &str {
         self.token.0.as_str()
     }
 }
@@ -25,10 +28,21 @@ pub struct RefreshResponse;
 
 #[derive(Debug, Error)]
 pub enum RefreshTokenError {
-    #[error("Token not valid")]
-    InvalidCredentials,
+    #[error("Authorization error: {reason}")]
+    InvalidCredentials { reason: String },
     #[error("Refresh token not found")]
     MissingCredentials,
     #[error(transparent)]
     Unknown(#[from] anyhow::Error),
+}
+
+impl From<CacheOperationError> for RefreshTokenError {
+    fn from(value: CacheOperationError) -> Self {
+        match value {
+            CacheOperationError::Invalid { reason } => {
+                RefreshTokenError::InvalidCredentials { reason }
+            }
+            _ => RefreshTokenError::Unknown(anyhow!("Internal server error")),
+        }
+    }
 }

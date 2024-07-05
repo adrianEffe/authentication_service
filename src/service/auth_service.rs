@@ -130,6 +130,15 @@ where
         &self,
         request: &RefreshRequest,
     ) -> Result<RefreshResponse, RefreshTokenError> {
+        let refresh_token_details =
+            verify_jwt(&self.config.refresh_token_public_key, request.get_token()).unwrap(); //TODO:hanfle error
+
+        self.cache
+            .verify_active_session(&refresh_token_details)
+            .await
+            .map_err(RefreshTokenError::from)?;
+
+        // let user =
         todo!()
     }
 }
