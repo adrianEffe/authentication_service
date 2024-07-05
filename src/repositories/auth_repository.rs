@@ -45,11 +45,11 @@ impl AuthRepository for PostgresDB {
         )
         .fetch_one(&self.pool)
         .await
-        .map_err(|e| {
-            anyhow!(e).context(format!(
-                "Database error while registering user with email {}",
-                request.email
-            ))
+        .map_err(|e| AuthRepositoryError::Database {
+            reason: format!(
+                "Database error while registering user with email {}: {}",
+                request.email, e
+            ),
         })?;
 
         Ok(FilteredUser::from(&user))
@@ -74,9 +74,13 @@ impl PostgresDB {
                 .bind(request.email.to_string().to_ascii_lowercase())
                 .fetch_one(&self.pool)
                 .await
-                .map_err(|e| {
-                    anyhow!(e).context(format!("Database error for: {}", request.email))
+                .map_err(|e| AuthRepositoryError::Database {
+                    reason: format!(
+                        "Database error while checking if user with email {} exists: {}",
+                        request.email, e
+                    ),
                 })?;
+
         if let Some(exists) = user_exists {
             if exists {
                 return Err(AuthRepositoryError::Duplicate {
@@ -97,8 +101,8 @@ impl PostgresDB {
         )
         .fetch_optional(&self.pool)
         .await
-        .map_err(|e| {
-            anyhow!(e).context(format!("Database error while looking up email: {}", email))
+        .map_err(|e| AuthRepositoryError::Database {
+            reason: format!("Database error: {}", e),
         })?
         .ok_or_else(|| AuthRepositoryError::InvalidCredentials {
             reason: "User does not exist".to_string(),
@@ -109,11 +113,11 @@ impl PostgresDB {
         sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id.get())
             .fetch_optional(&self.pool)
             .await
-            .map_err(|e| {
-                anyhow!(e).context(format!(
-                    "Database error while looking up user id: {:?}",
-                    user_id
-                ))
+            .map_err(|e| AuthRepositoryError::Database {
+                reason: format!(
+                    "Database error while looking up user id {:?}: {}",
+                    user_id, e
+                ),
             })?
             .ok_or_else(|| AuthRepositoryError::InvalidCredentials {
                 reason: "The user belonging to this token no longer exists".to_string(),
