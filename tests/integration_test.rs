@@ -1,7 +1,5 @@
 use authentication_service::{
-    api::utils::status::Status,
-    application::run,
-    domain::model::{refresh_token, user::FilteredUser},
+    api::utils::status::Status, application::run, domain::model::user::FilteredUser,
     helper::config::Config,
 };
 use dotenv::dotenv;
@@ -187,7 +185,7 @@ async fn test_refresh_token_success() {
         .build()
         .unwrap();
 
-    let email = "refresh_token_success0@test.com"; //TODO: number
+    let email = "refresh_token_success@test.com";
     let body = serde_json::json!({
         "email": email,
         "password": "12345678"
@@ -215,6 +213,43 @@ async fn test_refresh_token_success() {
     .await;
 
     assert!(!response.data.unwrap().access_token.is_empty());
+}
+
+#[tokio::test]
+async fn test_refresh_token_failure() {
+    let address = spawn_server().await;
+
+    let register_url = format!("http://{}/api/register", address);
+    let login_url = format!("http://{}/api/login", address);
+    let refresh_token_url = format!("http://{}/api/refresh", address);
+
+    let client = reqwest::Client::new();
+
+    let email = "refresh_token_failure@test.com";
+    let body = serde_json::json!({
+        "email": email,
+        "password": "12345678"
+    });
+
+    let _ = client.post(&register_url).json(&body).send().await;
+
+    let _ = client.post(&login_url).json(&body).send().await;
+
+    let response = client
+        .get(&refresh_token_url)
+        .json(&body)
+        .send()
+        .await
+        .unwrap();
+
+    clean_up_db(|db| async move {
+        db.execute(sqlx::query!("DELETE FROM users WHERE email = $1", email))
+            .await
+            .unwrap();
+    })
+    .await;
+
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED)
 }
 
 #[tokio::test]
@@ -418,5 +453,4 @@ struct GenericResponse<T> {
 #[derive(Debug, Deserialize)]
 struct AccessTokenData {
     access_token: String,
-    refresh_token: Option<String>,
 }
