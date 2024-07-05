@@ -13,6 +13,7 @@ use crate::{
             login_response::LoginResponse,
             login_user::{LoginUserError, LoginUserRequest},
             logout::{LogoutRequest, LogoutResponse},
+            refresh_token::{RefreshRequest, RefreshResponse, RefreshTokenError},
             register_user::{RegisterUserError, RegisterUserRequest},
             token::CacheToken,
             user::FilteredUser,
@@ -43,7 +44,10 @@ where
         &self,
         request: &RegisterUserRequest,
     ) -> Result<FilteredUser, RegisterUserError> {
-        self.repo.register(request).await
+        self.repo
+            .register(request)
+            .await
+            .map_err(RegisterUserError::from)
     }
 
     async fn login(&self, request: &LoginUserRequest) -> Result<LoginResponse, LoginUserError> {
@@ -114,7 +118,7 @@ where
 
         let user = self
             .repo
-            .auth(&UserId::new(access_token_details.user_id))
+            .fetch_user_by_id(&UserId::new(access_token_details.user_id))
             .await?;
 
         Ok(AuthMiddleware::new(user, access_token_details.token_uuid))
@@ -123,5 +127,50 @@ where
     async fn logout(&self, request: &LogoutRequest) -> Result<LogoutResponse, AuthorizationError> {
         self.cache.delete_token(request.get_uuid()).await?;
         Ok(LogoutResponse::new("User logged out"))
+    }
+
+    async fn refresh(
+        &self,
+        request: &RefreshRequest,
+    ) -> Result<RefreshResponse, RefreshTokenError> {
+        let refresh_token_details =
+            verify_jwt(&self.config.refresh_token_public_key, request.get_token()).map_err(
+                |_| RefreshTokenError::InvalidCredentials {
+                    reason: "Refresh token no longer valid".to_string(),
+                },
+            )?;
+
+        self.cache
+            .verify_active_session(&refresh_token_details)
+            .await
+            .map_err(RefreshTokenError::from)?;
+
+        let user = self
+            .repo
+            .fetch_user_by_id(&UserId::new(refresh_token_details.user_id))
+            .await?;
+
+        let access_token_details = generate_jwt(
+            user.id,
+            self.config.access_token_max_age,
+            &self.config.access_token_private_key,
+        )?;
+
+        self.cache
+            .save_token_data(&CacheToken::new(
+                access_token_details.token_uuid,
+                access_token_details.user_id,
+                self.config.access_token_max_age,
+            ))
+            .await?;
+
+        let access_token = access_token_details
+            .token
+            .ok_or_else(|| anyhow!("Failed to generate access token"))?;
+
+        Ok(RefreshResponse {
+            access_token,
+            access_token_max_age: self.config.access_token_max_age,
+        })
     }
 }

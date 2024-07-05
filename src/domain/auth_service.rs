@@ -10,6 +10,8 @@ use crate::domain::model::{
 
 use std::future::Future;
 
+use super::model::refresh_token::{RefreshRequest, RefreshResponse, RefreshTokenError};
+
 pub trait AuthService: Send + Sync + 'static {
     fn register(
         &self,
@@ -30,4 +32,9 @@ pub trait AuthService: Send + Sync + 'static {
         &self,
         request: &LogoutRequest,
     ) -> impl Future<Output = Result<LogoutResponse, AuthorizationError>> + Send;
+
+    fn refresh(
+        &self,
+        request: &RefreshRequest,
+    ) -> impl Future<Output = Result<RefreshResponse, RefreshTokenError>> + Send;
 }

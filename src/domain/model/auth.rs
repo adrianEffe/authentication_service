@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use thiserror::Error;
 
-use super::cache_errors::CacheOperationError;
+use super::{auth_repo_errors::AuthRepositoryError, cache_errors::CacheOperationError};
 
 #[derive(Debug)]
 pub struct AuthRequest {
@@ -39,7 +39,18 @@ impl From<CacheOperationError> for AuthorizationError {
             CacheOperationError::Invalid { reason } => {
                 AuthorizationError::InvalidCredentials { reason }
             }
-            _ => AuthorizationError::Unknown(anyhow!("Internal server error")),
+            _ => AuthorizationError::Unknown(anyhow!("Internal Server Error")),
+        }
+    }
+}
+
+impl From<AuthRepositoryError> for AuthorizationError {
+    fn from(value: AuthRepositoryError) -> Self {
+        match value {
+            AuthRepositoryError::InvalidCredentials { reason } => {
+                AuthorizationError::InvalidCredentials { reason }
+            }
+            _ => AuthorizationError::Unknown(anyhow!("Internal Server Error")),
         }
     }
 }

@@ -6,9 +6,9 @@ pub mod test_helpers {
 
     use crate::domain::{
         model::{
-            auth::AuthorizationError,
-            login_user::{LoginUserError, LoginUserRequest},
-            register_user::{HashedUserPassword, RegisterUserError, RegisterUserRequest},
+            auth_repo_errors::AuthRepositoryError,
+            login_user::LoginUserRequest,
+            register_user::{HashedUserPassword, RegisterUserRequest},
             user::{FilteredUser, User},
             user_email::UserEmail,
             user_id::UserId,
@@ -19,34 +19,34 @@ pub mod test_helpers {
 
     pub struct MockAuthRepository {
         /// It would be great for result to just take a Result instead of the below, unfortunately
-        /// it needs to conform to `Clone` but RegisterUserError` has an `Unknown` variant that
+        /// it needs to conform to `Clone` but AuthRepositoryError` has an `Unknown` variant that
         /// might wrap errors that are not Clone.
-        pub register_result: Arc<Mutex<Result<FilteredUser, RegisterUserError>>>,
-        pub auth_result: Arc<Mutex<Result<User, AuthorizationError>>>,
-        pub login_result: Arc<Mutex<Result<User, LoginUserError>>>,
+        pub register_result: Arc<Mutex<Result<FilteredUser, AuthRepositoryError>>>,
+        pub auth_result: Arc<Mutex<Result<User, AuthRepositoryError>>>,
+        pub login_result: Arc<Mutex<Result<User, AuthRepositoryError>>>,
     }
 
     impl AuthRepository for MockAuthRepository {
         async fn register(
             &self,
             _request: &RegisterUserRequest,
-        ) -> Result<FilteredUser, RegisterUserError> {
+        ) -> Result<FilteredUser, AuthRepositoryError> {
             let mut guard = self.register_result.lock().await;
-            let mut result = Err(RegisterUserError::Unknown(anyhow!("substitute error")));
+            let mut result = Err(AuthRepositoryError::Unknown(anyhow!("substitute error")));
             mem::swap(guard.deref_mut(), &mut result);
             result
         }
 
-        async fn auth(&self, _request: &UserId) -> Result<User, AuthorizationError> {
+        async fn fetch_user_by_id(&self, _request: &UserId) -> Result<User, AuthRepositoryError> {
             let mut guard = self.auth_result.lock().await;
-            let mut result = Err(AuthorizationError::Unknown(anyhow!("substitute error")));
+            let mut result = Err(AuthRepositoryError::Unknown(anyhow!("substitute error")));
             mem::swap(guard.deref_mut(), &mut result);
             result
         }
 
-        async fn login(&self, _request: &LoginUserRequest) -> Result<User, LoginUserError> {
+        async fn login(&self, _request: &LoginUserRequest) -> Result<User, AuthRepositoryError> {
             let mut guard = self.login_result.lock().await;
-            let mut result = Err(LoginUserError::Unknown(anyhow!("substitute error")));
+            let mut result = Err(AuthRepositoryError::Unknown(anyhow!("substitute error")));
             mem::swap(guard.deref_mut(), &mut result);
             result
         }
@@ -68,13 +68,13 @@ pub mod test_helpers {
         }
 
         pub fn failure() -> MockAuthRepository {
-            let register_result = Arc::new(Mutex::new(Err(RegisterUserError::Unknown(anyhow!(
+            let register_result = Arc::new(Mutex::new(Err(AuthRepositoryError::Unknown(anyhow!(
                 "register result error"
             )))));
-            let auth_result = Arc::new(Mutex::new(Err(AuthorizationError::Unknown(anyhow!(
+            let auth_result = Arc::new(Mutex::new(Err(AuthRepositoryError::Unknown(anyhow!(
                 "auth result error"
             )))));
-            let login_result = Arc::new(Mutex::new(Err(LoginUserError::Unknown(anyhow!(
+            let login_result = Arc::new(Mutex::new(Err(AuthRepositoryError::Unknown(anyhow!(
                 "login result error"
             )))));
 
@@ -129,7 +129,7 @@ pub mod test_helpers {
 
         let mock_repo = MockAuthRepository::success(email, password);
 
-        let result = mock_repo.auth(&user_id).await;
+        let result = mock_repo.fetch_user_by_id(&user_id).await;
 
         assert_eq!(email, &result.unwrap().email);
     }
@@ -141,7 +141,7 @@ pub mod test_helpers {
 
         let mock_repo = MockAuthRepository::failure();
 
-        let result = mock_repo.auth(&user_id).await;
+        let result = mock_repo.fetch_user_by_id(&user_id).await;
 
         assert!(result.is_err());
     }
