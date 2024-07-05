@@ -1,16 +1,15 @@
 use crate::domain::{
     model::{
-        auth::AuthorizationError,
         auth_repo_errors::AuthRepositoryError,
-        login_user::{LoginUserError, LoginUserRequest},
-        register_user::{RegisterUserError, RegisterUserRequest},
+        login_user::LoginUserRequest,
+        register_user::RegisterUserRequest,
         user::{FilteredUser, User},
         user_email::UserEmail,
         user_id::UserId,
     },
     repositories::auth_repository::AuthRepository,
 };
-use anyhow::{anyhow, Context};
+use anyhow::Context;
 use sqlx::{postgres::PgPoolOptions, Postgres};
 
 #[derive(Clone, Debug)]
