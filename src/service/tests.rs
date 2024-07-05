@@ -417,6 +417,9 @@ mod test {
         dotenv().ok();
         let config = Config::init();
 
+        let user_id = uuid::Uuid::new_v4();
+        let token = generate_jwt(user_id, 10, &config.refresh_token_private_key);
+
         let repo = MockAuthRepository::failure();
         let cache = MockCacheRepository::success();
 
@@ -427,7 +430,33 @@ mod test {
         };
 
         let result = state
-            .refresh(&RefreshRequest::new("invalid_token".to_string()))
+            .refresh(&RefreshRequest::new(token.unwrap().token.unwrap()))
+            .await;
+
+        assert!(result.is_err())
+    }
+
+    #[tokio::test]
+    async fn test_refresh_token_cache_failure() {
+        dotenv().ok();
+        let config = Config::init();
+
+        let email = "adrian@email.com";
+        let password = "password";
+        let user_id = uuid::Uuid::new_v4();
+        let token = generate_jwt(user_id, 10, &config.refresh_token_private_key);
+
+        let repo = MockAuthRepository::success(email, password);
+        let cache = MockCacheRepository::failure();
+
+        let state = Service {
+            repo,
+            cache,
+            config,
+        };
+
+        let result = state
+            .refresh(&RefreshRequest::new(token.unwrap().token.unwrap()))
             .await;
 
         assert!(result.is_err())

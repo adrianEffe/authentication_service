@@ -148,8 +148,7 @@ where
         let user = self
             .repo
             .fetch_user_by_id(&UserId::new(refresh_token_details.user_id))
-            .await
-            .unwrap(); // TODO: Fix errors for repo layer and handle here
+            .await?;
 
         let access_token_details = generate_jwt(
             user.id,
