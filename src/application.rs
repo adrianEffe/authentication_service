@@ -68,10 +68,6 @@ pub struct AppState<AS: AuthService> {
 /// - The Redis cache cannot be initialized.
 /// - The server fails to start.
 ///
-/// # Panics
-///
-/// This function does not panic.
-
 pub async fn run(listener: TcpListener, config: Config) -> Result<()> {
     let postgres = PostgresDB::new(&config.database_url).await?;
     let redis = RedisCache::new(&config.redis_url);
@@ -92,6 +88,39 @@ pub async fn run(listener: TcpListener, config: Config) -> Result<()> {
     Ok(())
 }
 
+/// Creates a new Axum router with the given application state.
+///
+/// This function sets up the routes for the application and applies the necessary
+/// middlewares and layers. It includes routes for health checks, authentication,
+/// and user management. Each route is associated with its corresponding handler
+/// function and middleware where required.
+///
+/// # Arguments
+///
+/// * `app_state` - An `Arc<AppState<AS>>` containing the shared application state.
+///   The `AppState` includes the authentication service and any other shared state
+///   needed by the handlers.
+///
+/// # Returns
+///
+/// A `Router` configured with the application's routes and middleware.
+///
+/// # Type Parameters
+///
+/// * `AS` - A type that implements the `AuthService` trait. This is used to abstract
+///   over the authentication service implementation.
+///
+/// # Examples
+///
+/// ```rust
+/// use std::sync::Arc;
+/// use authentication_service::application::{app, AppState, AuthService};
+///
+/// // Assume we have some AuthService implementation
+/// let auth_service = MyAuthService::new();
+/// let app_state = Arc::new(AppState { auth_service });
+/// let router = app(app_state);
+/// ```
 fn app<AS: AuthService>(app_state: Arc<AppState<AS>>) -> Router {
     Router::new()
         .route("/api/healthcheck", get(healthcheck))
