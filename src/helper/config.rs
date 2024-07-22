@@ -1,3 +1,9 @@
+/// Configuration settings for the application.
+///
+/// The `Config` struct holds various configuration parameters required by the application.
+/// These include settings for database connection, token management, and Redis configuration.
+/// It is designed to be initialized from environment variables, ensuring that sensitive
+/// information like keys and URLs are not hardcoded into the application.
 #[derive(Debug, Clone)]
 pub struct Config {
     pub database_url: String,
@@ -17,6 +23,22 @@ fn get_env(var_name: &str) -> String {
 }
 
 impl Config {
+    /// Initializes a new `Config` instance from environment variables.
+    ///
+    /// This method reads configuration values from environment variables and constructs
+    /// a `Config` struct with these values. If any environment variable is missing or
+    /// cannot be parsed (such as integer values), the application will panic with an
+    /// appropriate error message. This ensures that all required configuration parameters
+    /// are provided before the application starts.
+    ///
+    /// # Returns
+    ///
+    /// A `Config` instance initialized with values from the environment.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if any required environment variable is not set or if integer
+    /// values cannot be parsed correctly.
     pub fn init() -> Config {
         let database_url = get_env("DATABASE_URL");
         let access_token_private_key = get_env("ACCESS_TOKEN_PRIVATE_KEY");
