@@ -17,6 +17,19 @@ pub struct PostgresDB {
     pool: sqlx::Pool<Postgres>,
 }
 
+// A PostgreSQL-based implementation of the `AuthRepository` trait.
+///
+/// The `PostgresDB` struct provides methods for user registration, login,
+/// and fetching user details using a PostgreSQL database.
+///
+/// # Fields
+///
+/// * `pool` - The connection pool to the PostgreSQL database.
+///
+/// # Errors
+///
+/// Methods in this implementation return an `AuthRepositoryError` on failure,
+/// which includes details about the specific error encountered.
 impl PostgresDB {
     pub async fn new(url: &str) -> anyhow::Result<PostgresDB> {
         let pool = PgPoolOptions::new()
@@ -64,6 +77,29 @@ impl AuthRepository for PostgresDB {
 }
 
 impl PostgresDB {
+    /// Checks if a user with the given email already exists in the database.
+    ///
+    /// This method queries the database to determine whether a user with the specified
+    /// email address already exists, which helps in enforcing a unique constraint on
+    /// user registration. If a user with the given email exists, an `AuthRepositoryError::Duplicate`
+    /// error is returned. Otherwise, the method returns `Ok(())`.
+    ///
+    /// # Arguments
+    ///
+    /// * `request` - A reference to the `RegisterUserRequest` containing the user registration details.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` which is:
+    /// * `Ok(())` if the email is unique and no user exists with the given email.
+    /// * `Err(AuthRepositoryError::Duplicate)` if a user with the given email already exists.
+    /// * `Err(AuthRepositoryError::Database)` if there is a database error during the check.
+    ///
+    /// # Errors
+    ///
+    /// This method returns an `AuthRepositoryError` in the following scenarios:
+    /// * `AuthRepositoryError::Duplicate` if a user with the specified email already exists.
+    /// * `AuthRepositoryError::Database` if there is an error querying the database.
     async fn is_unique_constrain_violation(
         &self,
         request: &RegisterUserRequest,
