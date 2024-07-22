@@ -3,7 +3,7 @@ mod test {
     use dotenv::dotenv;
 
     use crate::{
-        api::utils::{jwt::generate_jwt, password_hasher::hash_password},
+        api::utils::{jwt::generate_jwt, security::hash_password},
         domain::{
             auth_service::AuthService,
             model::{

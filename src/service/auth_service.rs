@@ -3,7 +3,7 @@ use anyhow::anyhow;
 use crate::{
     api::utils::{
         jwt::{generate_jwt, verify_jwt},
-        password_hasher::is_valid,
+        security::is_valid,
     },
     domain::{
         auth_service::AuthService,
