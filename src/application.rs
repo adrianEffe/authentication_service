@@ -23,6 +23,30 @@ use tokio::net::TcpListener;
 use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
 
+/// Holds the shared state for the application, including the authentication service.
+///
+/// The `AppState` struct is used to share state across different parts of the application.
+/// It contains an instance of the authentication service, which is required by various
+/// handlers for tasks such as user authentication and authorization.
+///
+/// # Type Parameters
+///
+/// * `AS` - A type that implements the `AuthService` trait. This allows the `AppState`
+///   to be generic over any authentication service that conforms to the `AuthService` trait.
+///
+/// # Examples
+///
+/// ```rust
+/// use std::sync::Arc;
+/// use authentication_service::{application::AppState, domain::auth_service::AuthService};
+///
+/// // Assume we have some AuthService implementation
+/// let auth_service = MyAuthService::new();
+/// let app_state = Arc::new(AppState { auth_service });
+/// ```
+///
+/// This example demonstrates how to create a new `AppState` with a concrete implementation
+/// of the `AuthService` trait.
 pub struct AppState<AS: AuthService> {
     pub auth_service: AS,
 }
@@ -66,7 +90,6 @@ pub struct AppState<AS: AuthService> {
 /// - The PostgreSQL database connection cannot be established.
 /// - The Redis cache cannot be initialized.
 /// - The server fails to start.
-///
 pub async fn run(listener: TcpListener, config: Config) -> Result<()> {
     let postgres = PostgresDB::new(&config.database_url).await?;
     let redis = RedisCache::new(&config.redis_url);
