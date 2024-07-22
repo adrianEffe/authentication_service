@@ -12,6 +12,18 @@ use std::future::Future;
 
 use super::model::refresh_token::{RefreshRequest, RefreshResponse, RefreshTokenError};
 
+/// Trait representing authentication services in the application.
+///
+/// The `AuthService` trait defines the necessary methods for user registration, login,
+/// authentication, logout, and token refreshing. Implementations of this trait
+/// provide the actual logic for handling these operations, which can involve interactions
+/// with databases, caches, and other services.
+///
+/// # Implementors
+///
+/// Any struct that implements the `AuthService` trait must be `Send`, `Sync`, and `'static`.
+/// This ensures that instances of the implementing struct can be safely shared across
+/// threads and have a static lifetime.
 pub trait AuthService: Send + Sync + 'static {
     fn register(
         &self,
