@@ -1,17 +1,16 @@
-use crate::api::endpoints::refresh::refresh_access_token_handler;
-use crate::domain::auth_service::AuthService;
-use crate::repositories::auth_repository::PostgresDB;
-use crate::repositories::cache_repository::RedisCache;
-use crate::service::auth_service::Service;
 use crate::{
     api::{
         endpoints::{
             get_me::get_me_handler, healthcheck::healthcheck, login::login_handler,
-            logout::logout_handler, register::register_handler,
+            logout::logout_handler, refresh::refresh_access_token_handler,
+            register::register_handler,
         },
         middlewares::authentication::auth,
     },
+    domain::auth_service::AuthService,
     helper::config::Config,
+    repositories::{auth_repository::PostgresDB, cache_repository::RedisCache},
+    service::auth_service::Service,
 };
 use anyhow::Result;
 use axum::{
