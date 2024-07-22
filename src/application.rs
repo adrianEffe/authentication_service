@@ -28,6 +28,50 @@ pub struct AppState<AS: AuthService> {
     pub auth_service: AS,
 }
 
+/// Asynchronously runs the application with the given TCP listener and configuration.
+///
+/// This function sets up the necessary components for the application, including
+/// the PostgreSQL database connection and the Redis cache. It then initializes
+/// the application state and starts the server using the Axum framework.
+///
+/// # Arguments
+///
+/// * `listener` - A `TcpListener` that listens for incoming TCP connections.
+/// * `config` - A `Config` struct containing the configuration settings for the application.
+///
+/// # Returns
+///
+/// A `Result` which is:
+/// - `Ok(())` if the server runs successfully.
+/// - An error if there is an issue setting up the database connection, Redis cache,
+///   or starting the server.
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// use std::net::TcpListener;
+/// use authentication_service::{application::run, helper::config::Config};
+///
+/// #[tokio::main]
+/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+///     let listener = TcpListener::bind("127.0.0.1:3000")?;
+///     let config = Config::new();
+///     run(listener, config).await?;
+///     Ok(())
+/// }
+/// ```
+///
+/// # Errors
+///
+/// This function will return an error if:
+/// - The PostgreSQL database connection cannot be established.
+/// - The Redis cache cannot be initialized.
+/// - The server fails to start.
+///
+/// # Panics
+///
+/// This function does not panic.
+
 pub async fn run(listener: TcpListener, config: Config) -> Result<()> {
     let postgres = PostgresDB::new(&config.database_url).await?;
     let redis = RedisCache::new(&config.redis_url);
