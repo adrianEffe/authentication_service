@@ -1,3 +1,3 @@
 pub mod jwt;
-pub mod password_hasher;
+pub mod security;
 pub mod status;
