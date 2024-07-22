@@ -10,6 +10,20 @@ use crate::domain::{
     repositories::cache_repository::CacheRepository,
 };
 
+/// A Redis-based implementation of the `CacheRepository` trait.
+///
+/// The `RedisCache` struct provides methods for interacting with a Redis cache
+/// storage system. It allows for saving token data, verifying active sessions,
+/// and deleting tokens.
+///
+/// # Fields
+///
+/// * `client` - The Redis client used to connect to the Redis server.
+///
+/// # Errors
+///
+/// Methods in this implementation return a `CacheOperationError` on failure,
+/// which includes details about the specific error encountered.
 #[derive(Debug)]
 pub struct RedisCache {
     client: Client,

@@ -24,6 +24,16 @@ use crate::{
     helper::config::Config,
 };
 
+/// A service struct that implements the `AuthService` trait, providing authentication-related functionality.
+///
+/// The `Service` struct interacts with the authentication repository and cache repository to
+/// handle registration, login, token validation, logout, and token refreshing. It uses the configuration
+/// parameters provided by the `Config` struct to manage tokens and other settings.
+///
+/// # Type Parameters
+///
+/// * `R` - A type that implements the `AuthRepository` trait, providing methods to interact with the authentication database.
+/// * `C` - A type that implements the `CacheRepository` trait, providing methods to interact with the cache storage.
 #[derive(Debug)]
 pub struct Service<R, C>
 where
