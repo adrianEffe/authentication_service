@@ -4,13 +4,12 @@ use crate::domain::model::{
     login_response::LoginResponse,
     login_user::{LoginUserError, LoginUserRequest},
     logout::{LogoutRequest, LogoutResponse},
+    refresh_token::{RefreshRequest, RefreshResponse, RefreshTokenError},
     register_user::{RegisterUserError, RegisterUserRequest},
     user::FilteredUser,
 };
 
 use std::future::Future;
-
-use super::model::refresh_token::{RefreshRequest, RefreshResponse, RefreshTokenError};
 
 /// Trait representing authentication services in the application.
 ///
