@@ -13,7 +13,7 @@ async fn main() -> Result<()> {
     dotenv().ok();
 
     let config = Config::init();
-    let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let listener = TcpListener::bind("0.0.0.0:3000").await?;
 
     run(listener, config).await?;
     Ok(())

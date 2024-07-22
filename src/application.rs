@@ -72,13 +72,13 @@ pub struct AppState<AS: AuthService> {
 /// # Examples
 ///
 /// ```rust,no_run
-/// use std::net::TcpListener;
+/// use tokio::net::TcpListener;
 /// use authentication_service::{application::run, helper::config::Config};
 ///
 /// #[tokio::main]
 /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-///     let listener = TcpListener::bind("127.0.0.1:3000")?;
-///     let config = Config::new();
+///     let listener = TcpListener::bind("127.0.0.1:3000").await?;
+///     let config = Config::init();
 ///     run(listener, config).await?;
 ///     Ok(())
 /// }
@@ -131,18 +131,6 @@ pub async fn run(listener: TcpListener, config: Config) -> Result<()> {
 ///
 /// * `AS` - A type that implements the `AuthService` trait. This is used to abstract
 ///   over the authentication service implementation.
-///
-/// # Examples
-///
-/// ```rust
-/// use std::sync::Arc;
-/// use authentication_service::application::{app, AppState, AuthService};
-///
-/// // Assume we have some AuthService implementation
-/// let auth_service = MyAuthService::new();
-/// let app_state = Arc::new(AppState { auth_service });
-/// let router = app(app_state);
-/// ```
 fn app<AS: AuthService>(app_state: Arc<AppState<AS>>) -> Router {
     Router::new()
         .route("/api/healthcheck", get(healthcheck))
