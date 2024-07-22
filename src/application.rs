@@ -38,11 +38,29 @@ use tracing::Level;
 ///
 /// ```rust
 /// use std::sync::Arc;
-/// use authentication_service::{application::AppState, domain::auth_service::AuthService};
+/// use authentication_service::{
+///     application::AppState,
+///     domain::auth_service::AuthService,
+///     repositories::{auth_repository::PostgresDB, cache_repository::RedisCache},
+///     helper::config::Config,
+///     service::auth_service::Service,
+/// };
 ///
-/// // Assume we have some AuthService implementation
-/// let auth_service = MyAuthService::new();
-/// let app_state = Arc::new(AppState { auth_service });
+/// #[tokio::main]
+/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+///     let config = Config::init();
+///     let postgres = PostgresDB::new(&config.database_url).await?;
+///     let redis = RedisCache::new(&config.redis_url);
+///     let auth_service = Service {
+///         repo: postgres,
+///         cache: redis,
+///         config,
+///     };
+///
+///     let app_state = Arc::new(AppState { auth_service });
+///
+///     Ok(())
+/// }
 /// ```
 ///
 /// This example demonstrates how to create a new `AppState` with a concrete implementation
